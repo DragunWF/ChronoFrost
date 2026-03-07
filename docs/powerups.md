@@ -1,6 +1,6 @@
 # ChronoFrost: Powerups & Upgrades Documentation
 
-This document outlines the various buffs and enhancements the player can acquire during a run. The system is split into two categories: **Field Drops** (temporary powerups that spawn during gameplay) and **Milestone Upgrades** (permanent stat boosts purchased in the Shop).
+This document outlines the various buffs and enhancements the player can acquire during a run. The system is split into two categories: **Field Drops** (temporary powerups that spawn during gameplay) and **Milestone Upgrades** (permanent stat boosts selected in the boon menu).
 
 ---
 
@@ -25,9 +25,9 @@ Field drops appear randomly when destroying Ice Cubes. They must be picked up by
 
 ---
 
-## 2. Milestone Upgrades (The Shop)
+## 2. Milestone Upgrades (Boons)
 
-When the player reaches specific score thresholds (e.g., 1000, 2000, 3000 points), the game pauses and the Upgrade Shop appears. The player selects one of three random permanent enhancements.
+When the player reaches specific score thresholds (e.g., 1000, 2000, 3000 points), the game pauses and the boon menu appears. The player selects one of three random permanent enhancements.
 
 ### Combat Upgrades
 

@@ -1,4 +1,4 @@
-# ChronoFrost: Temporal Augments (Milestone Upgrades)
+# ChronoFrost: Temporal Boons (Milestone Upgrades)
 
 ## System Overview
 
