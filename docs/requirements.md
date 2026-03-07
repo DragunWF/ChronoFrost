@@ -18,16 +18,20 @@ A 2D top-down roguelite survival/bullet-hell game built entirely in Pygame using
 - **Enemy Attacks:** Ice Cubes periodically fire bullets in procedural patterns (rings, spirals, aimed shots).
 - **Energy Drops:** Destroyed Ice Cubes drop "Chrono-Energy" embers that the player must collect to refuel their Chrono-Freeze meter.
 - **Powerups:** Rare drops from enemies that grant temporary buffs (e.g., Thermal Shield, Flash-Step dash, Screen-clearing Supernova).
+  - Refer to [`powerups.md`](./powerups.md) for more details.
 
 ## Progression & Loop
 
-- **Milestone Upgrade Shop:** Reaching specific score milestones pauses the game and opens an upgrade screen.
-- **Upgrades:** The player chooses one of three random buffs (e.g., +1 Pierce, Faster Fire Rate, Larger Freeze Meter).
+- **Milestone Boons (Upgrades):** Reaching specific score milestones pauses the game and opens an upgrade screen.
+  - Refer to [`boons.md`](./boons.md) for more details.
+- **Boons:** The player chooses one of three random buffs (e.g., +1 Pierce, Faster Fire Rate, Larger Freeze Meter).
+  - Refer to [`boons.md`](./boons.md) for more details.
 - **Escalating Difficulty:** As time progresses, enemy spawn rates, bullet speed, and enemy health gradually increase.
 
 ## Architecture & Game States
 
 - **Main Menu State:** Title screen with a "Start Game" option.
+  - Refer to [`main_menu.md`](./main_menu.md) for more details.
 - **Playing State:** The core survival loop.
-- **Shop State:** The paused milestone upgrade screen.
+- **Boon State:** The paused boons screen where the player can upgrade in each milestone.
 - **Game Over State:** Displays final score and a prompt to restart.
