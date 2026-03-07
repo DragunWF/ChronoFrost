@@ -9,3 +9,5 @@
 - Powerups
 - Upgrade shop opens whenever the player hits a certain milestone
 - Main Menu
+
+_Note:_ Please ignore this file. This was created primarily for the sake of brainstorming.
