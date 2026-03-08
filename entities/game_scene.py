@@ -122,12 +122,16 @@ class GameScene:
             if (bullet.x < -50 or bullet.x > self.screen_width + 50 or
                     bullet.y < -50 or bullet.y > self.screen_height + 50):
                 self.enemy_bullets.remove(bullet)
+                continue
 
             # Check collision: Enemy Bullet vs Player
             dist_to_player = get_distance(
                 bullet.x, bullet.y, self.player.x, self.player.y)
             if dist_to_player < bullet.radius + self.player.radius:
-                return "GAME_OVER"
+                self.player.take_damage(1)
+                self.enemy_bullets.remove(bullet)
+                if self.player.hp <= 0:
+                    return "GAME_OVER"
 
         # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
@@ -141,7 +145,11 @@ class GameScene:
             dist_to_player = get_distance(
                 self.player.x, self.player.y, enemy.x, enemy.y)
             if dist_to_player < self.player.radius + (enemy.size / 2):
-                return "GAME_OVER"
+                self.player.take_damage(1)
+                self.enemies.remove(enemy)
+                if self.player.hp <= 0:
+                    return "GAME_OVER"
+                continue
 
             # Check collision: Player Bullet vs Enemy
             for p_bullet in self.player_bullets[:]:
@@ -234,3 +242,25 @@ class GameScene:
             label_text = self.small_font.render(
                 "CHRONO-CHARGE", True, (255, 255, 255))
             screen.blit(label_text, (meter_x, meter_y - 25))
+
+            # Draw UI - Bottom Right Health Bar
+            hp_meter_width = 200
+            hp_meter_height = 20
+            hp_meter_x = self.screen_width - hp_meter_width - 20
+            hp_meter_y = self.screen_height - 40
+
+            # Background dark gray rect
+            pygame.draw.rect(screen, (50, 50, 50),
+                             (hp_meter_x, hp_meter_y, hp_meter_width, hp_meter_height))
+
+            # Foreground green rect
+            hp_fill_width = (self.player.hp /
+                             self.player.max_hp) * hp_meter_width
+            if hp_fill_width > 0:
+                pygame.draw.rect(screen, (0, 255, 0),
+                                 (hp_meter_x, hp_meter_y, hp_fill_width, hp_meter_height))
+
+            # Text label above the health bar
+            hp_label = self.small_font.render(
+                "HULL INTEGRITY", True, (255, 255, 255))
+            screen.blit(hp_label, (hp_meter_x, hp_meter_y - 25))

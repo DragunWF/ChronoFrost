@@ -10,12 +10,19 @@ class Player:
         self.y: float = y
         self.radius: int = 15
         self.speed: int = 300
+        self.max_hp: int = 3
+        self.hp: int = 3
         self.freeze_meter: float = 100.0
         self.max_freeze_meter: float = 100.0
         self.freeze_drain_rate: float = 25.0  # Drains full meter in 4 seconds
         self.freeze_recovery_rate: float = 10.0  # Recovers full meter in 10 seconds
         self.is_freezing: bool = False
         self.aim_angle: float = 0.0
+
+    def take_damage(self, amount: int = 1) -> None:
+        self.hp -= amount
+        if self.hp < 0:
+            self.hp = 0
 
     def update(self, dt: float, keys: pygame.key.ScancodeWrapper, mouse_pos: Tuple[int, int]) -> None:
         # 1. WASD Movement (unaffected by time_scale)
