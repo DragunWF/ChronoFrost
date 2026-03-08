@@ -1,7 +1,7 @@
 import pygame
 import random
 from entities.player import Player
-from entities.enemies import IceCube, Bullet
+from entities.enemies import TrackerCube, ShotgunCube, NovaCube, Bullet
 from utils.math_helpers import get_distance
 
 class GameScene:
@@ -13,7 +13,7 @@ class GameScene:
         self.small_font = pygame.font.SysFont(None, 24)
         self.next_state = None
         
-        # Screen dimensions (assuming 800x600 based on standard setup)
+        # Screen dimensions
         self.screen_width = 800
         self.screen_height = 600
 
@@ -112,9 +112,10 @@ class GameScene:
 
         # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
-            new_bullet = enemy.update(dt, self.time_scale, self.player.x, self.player.y)
-            if new_bullet:
-                self.enemy_bullets.append(new_bullet)
+            # Enemies now return a list of bullets
+            new_bullets = enemy.update(dt, self.time_scale, self.player.x, self.player.y)
+            if new_bullets:
+                self.enemy_bullets.extend(new_bullets)
             
             # Check collision: Player vs Enemy
             dist_to_player = get_distance(self.player.x, self.player.y, enemy.x, enemy.y)
@@ -151,7 +152,13 @@ class GameScene:
             x = self.screen_width + margin
             y = random.randint(0, self.screen_height)
             
-        self.enemies.append(IceCube(x, y))
+        enemy_class = random.choices(
+            [TrackerCube, ShotgunCube, NovaCube],
+            weights=[60, 30, 10],
+            k=1
+        )[0]
+            
+        self.enemies.append(enemy_class(x, y))
 
     def draw(self, screen):
         """
