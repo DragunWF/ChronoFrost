@@ -1,10 +1,13 @@
 import pygame
 import random
 from typing import List, Optional
+
 from entities.player import Player
 from entities.enemies import TrackerCube, ShotgunCube, NovaCube, Bullet, BaseEnemy
+
 from utils.math_helpers import get_distance
 from utils.base_scene import BaseScene
+from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
 
 
 class GameScene(BaseScene):
@@ -67,10 +70,10 @@ class GameScene(BaseScene):
             if event.type == pygame.KEYDOWN:
                 # Placeholder shortcut to test the State Machine
                 if event.key == pygame.K_m:
-                    self.next_state = "BOONS"
+                    self.next_state = BOONS_STATE
                 # Shortcut to "die" and return to menu
                 if event.key == pygame.K_ESCAPE:
-                    self.next_state = "MENU"
+                    self.next_state = MAIN_MENU_STATE
 
                 # Toggle Chrono-Freeze
                 if event.key == pygame.K_SPACE:
@@ -146,7 +149,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
-                    self.next_state = "GAME_OVER"
+                    self.next_state = GAME_OVER_STATE
 
         # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
@@ -163,7 +166,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemies.remove(enemy)
                 if self.player.hp <= 0:
-                    self.next_state = "GAME_OVER"
+                    self.next_state = GAME_OVER_STATE
                 continue
 
             # Check collision: Player Bullet vs Enemy

@@ -1,6 +1,8 @@
 import pygame
 from typing import List, Optional
+
 from utils.base_scene import BaseScene
+from utils.constants import MAIN_MENU_STATE
 
 
 class GameOverMenu(BaseScene):
@@ -16,7 +18,7 @@ class GameOverMenu(BaseScene):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r or event.key == pygame.K_RETURN:
-                    self.next_state = "MENU"
+                    self.next_state = MAIN_MENU_STATE
 
     def update(self, dt: float) -> Optional[str]:
         return self.next_state

@@ -6,6 +6,14 @@ from entities.game_scene import GameScene
 from entities.boons_menu import BoonsMenu
 from entities.game_over_menu import GameOverMenu
 
+from utils.constants import (
+    MAIN_MENU_STATE,
+    PLAY_STATE,
+    GAME_OVER_STATE,
+    BOONS_STATE,
+    QUIT_STATE
+)
+
 # --- Global Configuration ---
 WIDTH, HEIGHT = 800, 600
 FPS = 60
@@ -20,10 +28,10 @@ def main():
 
     # Dictionary holding our instantiated state objects.
     states = {
-        "MENU": MainMenu(),
-        "PLAYING": GameScene(),
-        "BOONS": BoonsMenu(),
-        "GAME_OVER": GameOverMenu()
+        MAIN_MENU_STATE: MainMenu(),
+        PLAY_STATE: GameScene(),
+        BOONS_STATE: BoonsMenu(),
+        GAME_OVER_STATE: GameOverMenu()
     }
 
     current_state = "MENU"
@@ -57,7 +65,7 @@ def main():
                 # Call an enter() method to reset the scene (e.g., resetting the player's HP when restarting)
                 if hasattr(states[current_state], 'enter'):
                     states[current_state].enter()
-            elif next_state == "QUIT":
+            elif next_state == QUIT_STATE:
                 # Allow scenes to gracefully exit the game by returning "QUIT"
                 running = False
 
