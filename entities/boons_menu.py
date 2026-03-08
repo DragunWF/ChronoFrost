@@ -1,15 +1,16 @@
 import pygame
+from typing import List, Optional
 
 
 class BoonsMenu:
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the draft screen. Sets up card dimensions and fonts.
         """
-        self.font = pygame.font.SysFont(None, 36)
-        self.next_state = None
+        self.font: pygame.font.Font = pygame.font.SysFont(None, 36)
+        self.next_state: Optional[str] = None
 
-    def enter(self):
+    def enter(self) -> None:
         """
         Called exactly when the player hits a score milestone.
         This is where you will randomize the 3 cards presented to the player 
@@ -18,7 +19,7 @@ class BoonsMenu:
         self.next_state = None
         # Example: self.current_cards = self.get_three_random_augments()
 
-    def handle_events(self, events):
+    def handle_events(self, events: List[pygame.event.Event]) -> None:
         """
         Handles the player clicking on one of the 3 upgrade cards.
         """
@@ -29,7 +30,7 @@ class BoonsMenu:
                     # Apply the upgrade to the player here, then return to the game
                     self.next_state = "PLAYING"
 
-    def update(self, dt):
+    def update(self, dt: float) -> Optional[str]:
         """
         Handles any visual hover effects on the cards.
         Returns "PLAYING" once an upgrade is selected to unpause the game.
@@ -38,7 +39,7 @@ class BoonsMenu:
             return self.next_state
         return None
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
         """
         Renders the 3 draft cards over the game.
         Tip: Don't fill the screen with a solid color here. If you draw a semi-transparent 
