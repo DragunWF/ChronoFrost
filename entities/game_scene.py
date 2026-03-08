@@ -4,9 +4,10 @@ from typing import List, Optional
 from entities.player import Player
 from entities.enemies import TrackerCube, ShotgunCube, NovaCube, Bullet, BaseEnemy
 from utils.math_helpers import get_distance
+from entities.base_scene import BaseScene
 
 
-class GameScene:
+class GameScene(BaseScene):
     def __init__(self) -> None:
         """
         Initialize the core game containers here.

@@ -1,11 +1,9 @@
-# ==========================================
-# File: main_menu.py
-# ==========================================
 import pygame
 from typing import List, Optional
+from entities.base_scene import BaseScene
 
 
-class MainMenu:
+class MainMenu(BaseScene):
     def __init__(self) -> None:
         """
         Initialize persistent menu assets here. 

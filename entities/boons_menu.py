@@ -1,8 +1,9 @@
 import pygame
 from typing import List, Optional
+from entities.base_scene import BaseScene
 
 
-class BoonsMenu:
+class BoonsMenu(BaseScene):
     def __init__(self) -> None:
         """
         Initializes the draft screen. Sets up card dimensions and fonts.
