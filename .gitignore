@@ -1,0 +1,18 @@
+# DragunWF
+dragunwf-secret
+
+# Python/Build
+__pycache__/
+*.py[cod]
+*.so
+build/
+dist/
+*.egg-info/
+venv/
+.venv/
+.env/
+
+# IDE/Editor
+.vscode/
+.idea/
+
