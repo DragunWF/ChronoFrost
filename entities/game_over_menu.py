@@ -2,6 +2,7 @@ import pygame
 from typing import List, Optional
 from utils.base_scene import BaseScene
 
+
 class GameOverMenu(BaseScene):
     def __init__(self) -> None:
         self.font: pygame.font.Font = pygame.font.SysFont(None, 64)
@@ -22,9 +23,12 @@ class GameOverMenu(BaseScene):
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill((50, 10, 10))  # Dark red
-        
+
         title = self.font.render("FROZEN FOREVER", True, (255, 100, 100))
-        prompt = self.small_font.render("Press R to Return to Menu", True, (255, 255, 255))
-        
-        screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, screen.get_height() // 2 - 50))
-        screen.blit(prompt, (screen.get_width() // 2 - prompt.get_width() // 2, screen.get_height() // 2 + 50))
+        prompt = self.small_font.render(
+            "Press R to Return to Menu", True, (255, 255, 255))
+
+        screen.blit(title, (screen.get_width() // 2 -
+                    title.get_width() // 2, screen.get_height() // 2 - 50))
+        screen.blit(prompt, (screen.get_width() // 2 -
+                    prompt.get_width() // 2, screen.get_height() // 2 + 50))
