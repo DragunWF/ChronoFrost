@@ -10,6 +10,7 @@ class GameScene:
         Initialize the core game containers here.
         """
         self.font = pygame.font.SysFont(None, 36)
+        self.small_font = pygame.font.SysFont(None, 24)
         self.next_state = None
         
         # Screen dimensions (assuming 800x600 based on standard setup)
@@ -29,6 +30,7 @@ class GameScene:
         # Lists for enemies and bullets
         self.enemies = []
         self.player_bullets = []
+        self.enemy_bullets = []
         
         # Core mechanics variables
         self.time_scale = 1.0
@@ -56,7 +58,7 @@ class GameScene:
             # Left Mouse Button to shoot
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    bullet = Bullet(self.player.x, self.player.y, self.player.aim_angle)
+                    bullet = Bullet(self.player.x, self.player.y, self.player.aim_angle, is_enemy=False)
                     self.player_bullets.append(bullet)
 
     def update(self, dt):
@@ -85,26 +87,37 @@ class GameScene:
             self.spawn_timer = self.base_spawn_rate
             self._spawn_enemy()
 
-        # 4. Update Bullets
+        # 4. Update Player Bullets
         for bullet in self.player_bullets[:]:
-            # According to requirements, bullet movement uses time_scale.
-            # If player bullets shouldn't be slowed down, we would pass 1.0 here instead.
-            # We'll pass 1.0 for player bullets so they feel responsive, while enemy bullets (when added) will use self.time_scale.
-            # However, the prompt specifically requested Bullet movement to use time_scale, so we pass it.
-            bullet.update(dt, 1.0) # Changed to 1.0 so player bullets are fast. If instruction meant ALL bullets, we change to self.time_scale
+            bullet.update(dt, 1.0) # Player bullets are typically fast, passing 1.0 for responsiveness
             
             # Remove bullets that go off-screen
             if (bullet.x < -50 or bullet.x > self.screen_width + 50 or 
                 bullet.y < -50 or bullet.y > self.screen_height + 50):
                 self.player_bullets.remove(bullet)
 
-        # 5. Update Enemies & Collision Detection
+        # 5. Update Enemy Bullets
+        for bullet in self.enemy_bullets[:]:
+            bullet.update(dt, self.time_scale)
+            
+            # Remove bullets that go off-screen
+            if (bullet.x < -50 or bullet.x > self.screen_width + 50 or 
+                bullet.y < -50 or bullet.y > self.screen_height + 50):
+                self.enemy_bullets.remove(bullet)
+                
+            # Check collision: Enemy Bullet vs Player
+            dist_to_player = get_distance(bullet.x, bullet.y, self.player.x, self.player.y)
+            if dist_to_player < bullet.radius + self.player.radius:
+                return "GAME_OVER"
+
+        # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
-            enemy.update(dt, self.time_scale, self.player.x, self.player.y)
+            new_bullet = enemy.update(dt, self.time_scale, self.player.x, self.player.y)
+            if new_bullet:
+                self.enemy_bullets.append(new_bullet)
             
             # Check collision: Player vs Enemy
             dist_to_player = get_distance(self.player.x, self.player.y, enemy.x, enemy.y)
-            # Simple circle vs circle (approximate square to circle)
             if dist_to_player < self.player.radius + (enemy.size / 2):
                 return "GAME_OVER"
                 
@@ -151,15 +164,36 @@ class GameScene:
         for enemy in self.enemies:
             enemy.draw(screen)
             
+        for bullet in self.enemy_bullets:
+            bullet.draw(screen)
+            
         for bullet in self.player_bullets:
             bullet.draw(screen)
             
         self.player.draw(screen)
 
-        # Draw UI
-        ui_text = "SURVIVAL ARENA - Press 'SPACE' to Freeze - Freezes: " + str(int(self.player.freeze_meter))
+        # Draw UI - Top Left Text
+        ui_text = "SURVIVAL ARENA - Press 'SPACE' to Freeze"
         if self.player.is_freezing:
             ui_text += " [ACTIVE]"
-            
         text = self.font.render(ui_text, True, (255, 255, 255))
         screen.blit(text, (20, 20))
+        
+        # Draw UI - Bottom Left Chrono-Freeze Meter
+        meter_x = 20
+        meter_y = self.screen_height - 40
+        meter_width = 200
+        meter_height = 20
+        
+        # Background dark gray rect
+        pygame.draw.rect(screen, (50, 50, 50), (meter_x, meter_y, meter_width, meter_height))
+        
+        # Foreground colored rect
+        fill_width = (self.player.freeze_meter / self.player.max_freeze_meter) * meter_width
+        fill_color = (0, 255, 255) if self.player.is_freezing else (0, 150, 255)
+        if fill_width > 0:
+            pygame.draw.rect(screen, fill_color, (meter_x, meter_y, fill_width, meter_height))
+            
+        # Text label above the meter
+        label_text = self.small_font.render("CHRONO-CHARGE", True, (255, 255, 255))
+        screen.blit(label_text, (meter_x, meter_y - 25))

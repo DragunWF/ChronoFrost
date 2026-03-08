@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 from utils.math_helpers import get_angle
 
 
@@ -9,6 +10,7 @@ class IceCube:
         self.y = y
         self.size = 24
         self.speed = 120
+        self.fire_timer = 2.5  # Shoots every 2.5 seconds
 
     def update(self, dt, time_scale, target_x, target_y):
         # 1. Calculate angle to player
@@ -20,6 +22,15 @@ class IceCube:
         # 3. Move towards player
         self.x += math.cos(angle) * self.speed * effective_dt
         self.y += math.sin(angle) * self.speed * effective_dt
+
+        # 4. Handle Firing
+        self.fire_timer -= effective_dt
+        if self.fire_timer <= 0:
+            self.fire_timer = 2.5 + random.uniform(-0.5, 0.5)  # Add slight variance
+            # Return a new enemy bullet aimed at the player
+            return Bullet(self.x, self.y, angle, is_enemy=True)
+
+        return None
 
     def draw(self, screen):
         # Draw a simple square for the Ice Cube
@@ -33,12 +44,13 @@ class IceCube:
 
 
 class Bullet:
-    def __init__(self, x, y, angle):
+    def __init__(self, x, y, angle, is_enemy=False):
         self.x = x
         self.y = y
         self.radius = 6
         self.speed = 500
         self.angle = angle
+        self.is_enemy = is_enemy
 
     def update(self, dt, time_scale):
         # Note: Depending on design, player bullets might ignore time_scale.
@@ -50,5 +62,6 @@ class Bullet:
         self.y += math.sin(self.angle) * self.speed * effective_dt
 
     def draw(self, screen):
-        pygame.draw.circle(screen, (255, 255, 0),
+        color = (255, 50, 50) if self.is_enemy else (255, 255, 0)
+        pygame.draw.circle(screen, color,
                            (int(self.x), int(self.y)), self.radius)
