@@ -1,5 +1,5 @@
 import pygame
-from entities.base_scene import BaseScene
+from utils.base_scene import BaseScene
 
 
 class GameOverMenu(BaseScene):

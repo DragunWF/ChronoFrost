@@ -1,6 +1,6 @@
 import pygame
 from typing import List, Optional
-from entities.base_scene import BaseScene
+from utils.base_scene import BaseScene
 
 
 class BoonsMenu(BaseScene):
