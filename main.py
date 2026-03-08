@@ -23,7 +23,7 @@ def main():
         "MENU": MainMenu(),
         "PLAYING": GameScene(),
         "BOONS": BoonsMenu(),
-        "GAMEOVER": GameOverMenu()
+        "GAME_OVER": GameOverMenu()
     }
 
     current_state = "MENU"

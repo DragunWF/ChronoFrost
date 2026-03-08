@@ -132,7 +132,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
-                    return "GAME_OVER"
+                    self.next_state = "GAME_OVER"
 
         # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
@@ -149,7 +149,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemies.remove(enemy)
                 if self.player.hp <= 0:
-                    return "GAME_OVER"
+                    self.next_state = "GAME_OVER"
                 continue
 
             # Check collision: Player Bullet vs Enemy
