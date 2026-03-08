@@ -4,6 +4,7 @@ import sys
 from entities.main_menu import MainMenu
 from entities.game_scene import GameScene
 from entities.boons_menu import BoonsMenu
+from entities.game_over_menu import GameOverMenu
 
 # --- Global Configuration ---
 WIDTH, HEIGHT = 800, 600
@@ -21,7 +22,8 @@ def main():
     states = {
         "MENU": MainMenu(),
         "PLAYING": GameScene(),
-        "BOONS": BoonsMenu()
+        "BOONS": BoonsMenu(),
+        "GAMEOVER": GameOverMenu()
     }
 
     current_state = "MENU"
