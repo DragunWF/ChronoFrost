@@ -2,11 +2,11 @@
 
 ## Overview
 
-This document outlines the directory and file architecture for ChronoFrost. The project is structured to separate documentation, core game logic, throwaway testing scripts, and assets, ensuring a clean workspace for rapid game jam development.
+This document outlines the directory and file architecture for ChronoFrost. The project is structured to separate documentation, core game logic, reusable utilities, throwaway testing scripts, and assets, ensuring a clean workspace for rapid game jam development.
 
 ## Directory Tree
 
-```txt
+```text
 ChronoFrost/
 ├── assets/                 # Game assets (empty by default due to procedural geometry)
 │   ├── audio/              # Sound effects and background music (.wav, .ogg)
@@ -26,6 +26,9 @@ ChronoFrost/
 ├── prototypes/             # Isolated sandbox scripts for testing mechanics
 │   ├── throwaway_movement.py
 │   └── throwaway_lighting.py
+├── utils/                  # Reusable helper functions and global tools
+│   ├── __init__.py
+│   └── vfx.py              # Screen shake, hit-stop, and FrostNova effects
 ├── GEMINI.md               # Context and constraint directives for the Gemini CLI
 ├── main.py                 # Application entry point and State Machine manager
 ├── Pipfile                 # Pipenv dependency definitions

@@ -18,6 +18,7 @@ A 2D top-down roguelite survival/bullet-hell game built entirely in Pygame. Rely
 For a deep dive into the mechanics, architecture, and feature sets, check out the project documentation located in the `docs/` directory:
 
 - [**Game Requirements (`requirements.md`)**](./docs/requirements.md) - The master blueprint, detailing the core loop, scoring, entity behavior, and the state machine architecture.
+- [**Project Structure** (`project_structure.md`)](./docs/project_structure.md) - The structure of directories and files in the project.
 - [**Main Menu (`main_menu.md`)**](./docs/main_menu.md) - UI design philosophy, options/audio configurations, and procedural visual flair.
 - [**Powerups (`powerups.md`)**](./docs/powerups.md) - Details on active "Field Drops" like the Thermal Shield, Flash-Step, and Supernova.
 - [**Milestone Boons (`boons.md`)**](./docs/boons.md) - The complete list of offensive, defensive, and temporal permanent upgrades available during the draft phase.
