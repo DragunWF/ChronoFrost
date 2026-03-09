@@ -142,8 +142,9 @@ class GameScene(BaseScene):
             next_threshold = 8000 + 3000 * (self.next_milestone_idx - len(_MILESTONES) + 1)
         if int(self.score) >= next_threshold:
             self.next_milestone_idx += 1
-            self.next_state = BOONS_STATE
-            return self.next_state
+            # Do not persist this transition in self.next_state; otherwise
+            # resuming from Boons will immediately re-enter the menu.
+            return BOONS_STATE
 
         # 1. Handle Chrono-Freeze State & time_scale
         if self.player.is_freezing and self.player.freeze_meter > 0:

@@ -69,7 +69,9 @@ def main():
                     states[BOONS_STATE].open_with_stats(states[PLAY_STATE].run_stats)
                 elif prev_state == BOONS_STATE and current_state == PLAY_STATE:
                     # BOONS → PLAY: resume the existing run; do NOT call enter()
-                    pass
+                    # Defensive: clear any stale one-shot transition requested by
+                    # GameScene before the menu opened.
+                    states[PLAY_STATE].next_state = None
                 else:
                     # All other transitions: call enter() to reset the target scene
                     if hasattr(states[current_state], 'enter'):
