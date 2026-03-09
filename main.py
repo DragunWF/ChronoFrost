@@ -61,10 +61,19 @@ def main():
         # State Switching Logic
         if next_state is not None and next_state != current_state:
             if next_state in states:
+                prev_state = current_state
                 current_state = next_state
-                # Call an enter() method to reset the scene (e.g., resetting the player's HP when restarting)
-                if hasattr(states[current_state], 'enter'):
-                    states[current_state].enter()
+
+                if prev_state == PLAY_STATE and current_state == BOONS_STATE:
+                    # PLAY → BOONS: share RunStats with the menu; do NOT reset the game
+                    states[BOONS_STATE].open_with_stats(states[PLAY_STATE].run_stats)
+                elif prev_state == BOONS_STATE and current_state == PLAY_STATE:
+                    # BOONS → PLAY: resume the existing run; do NOT call enter()
+                    pass
+                else:
+                    # All other transitions: call enter() to reset the target scene
+                    if hasattr(states[current_state], 'enter'):
+                        states[current_state].enter()
             elif next_state == QUIT_STATE:
                 # Allow scenes to gracefully exit the game by returning "QUIT"
                 running = False

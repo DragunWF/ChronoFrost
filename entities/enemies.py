@@ -6,13 +6,25 @@ from utils.math_helpers import get_angle
 
 
 class Bullet:
-    def __init__(self, x: float, y: float, angle: float, is_enemy: bool = False) -> None:
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        angle: float,
+        is_enemy: bool = False,
+        damage: int = 1,
+        pierce_count: int = 0,
+    ) -> None:
         self.x: float = x
         self.y: float = y
         self.radius: int = 6
         self.speed: int = 500
         self.angle: float = angle
         self.is_enemy: bool = is_enemy
+        self.damage: int = damage
+        # Pierce charges remaining; bullet passes through an enemy instead of
+        # being destroyed as long as pierce_count > 0 (decrements on each hit).
+        self.pierce_count: int = pierce_count
 
     def update(self, dt: float, time_scale: float) -> None:
         # Multiply dt by the global time_scale
@@ -36,6 +48,9 @@ class BaseEnemy:
         self.fire_timer: float = 2.5
         self.color: Tuple[int, int, int] = (150, 200, 255)
         self.inner_color: Tuple[int, int, int] = (200, 230, 255)
+        self.hp: int = 1
+        # Knockback velocity set by Supernova; decays exponentially each frame
+        self.knockback_vel: List[float] = [0.0, 0.0]
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         """
@@ -44,6 +59,15 @@ class BaseEnemy:
         Must return a list of Bullet objects (can be empty).
         """
         return []
+
+    def _apply_knockback(self, effective_dt: float) -> None:
+        """Apply knockback velocity then decay it so it reaches ~zero in 0.5 s."""
+        self.x += self.knockback_vel[0] * effective_dt
+        self.y += self.knockback_vel[1] * effective_dt
+        # Exponential decay: velocity halves in ~0.09s
+        decay = max(0.0, 1.0 - 8.0 * effective_dt)
+        self.knockback_vel[0] *= decay
+        self.knockback_vel[1] *= decay
 
     def draw(self, screen: pygame.Surface) -> None:
         # Draw a simple square for the Enemy
@@ -69,6 +93,9 @@ class TrackerCube(BaseEnemy):
         angle = get_angle(self.x, self.y, target_x, target_y)
         effective_dt = dt * time_scale
 
+        # Resolve knockback before normal movement
+        self._apply_knockback(effective_dt)
+
         self.x += math.cos(angle) * self.speed * effective_dt
         self.y += math.sin(angle) * self.speed * effective_dt
 
@@ -91,6 +118,8 @@ class ShotgunCube(BaseEnemy):
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         angle = get_angle(self.x, self.y, target_x, target_y)
         effective_dt = dt * time_scale
+
+        self._apply_knockback(effective_dt)
 
         self.x += math.cos(angle) * self.speed * effective_dt
         self.y += math.sin(angle) * self.speed * effective_dt
@@ -119,6 +148,8 @@ class NovaCube(BaseEnemy):
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         effective_dt = dt * time_scale
+
+        self._apply_knockback(effective_dt)
 
         # Move until reaching the top-third of the screen
         if not self.stopped:

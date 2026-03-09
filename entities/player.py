@@ -1,11 +1,12 @@
 import pygame
 import math
-from typing import Tuple
+from typing import Tuple, Optional
 from utils.math_helpers import get_angle
+from systems.run_stats import RunStats
 
 
 class Player:
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, run_stats: Optional[RunStats] = None) -> None:
         self.x: float = x
         self.y: float = y
         self.radius: int = 15
@@ -19,36 +20,112 @@ class Player:
         self.is_freezing: bool = False
         self.aim_angle: float = 0.0
 
+        # Upgrade state — provided by GameScene; falls back to a default instance
+        self.run_stats: RunStats = run_stats if run_stats is not None else RunStats()
+
+        # ThermalShield: absorbs the next 1 damage instance and grants i-frames
+        self.shield_active: bool = False
+
+        # FlashStep: each stack = one SHIFT dash available
+        self.flash_step_charges: int = 0
+        self.is_dashing: bool = False
+        self.dash_timer: float = 0.0
+        self.dash_vel: Tuple[float, float] = (0.0, 0.0)
+
+        # I-frame timer: while > 0 all incoming damage is ignored
+        self.invincible_timer: float = 0.0
+
+        # Set to True by take_damage() when KineticPlating fires; game_scene reads
+        # and resets this flag to apply the cooldown cut
+        self.kinetic_proc: bool = False
+
+        # Rising-edge detection for SHIFT so one press = one dash (not held)
+        self._prev_shift: bool = False
+
     def take_damage(self, amount: int = 1) -> None:
-        self.hp -= amount
-        if self.hp < 0:
-            self.hp = 0
+        # I-frames: ignore all damage while timer is running
+        if self.invincible_timer > 0:
+            return
+        # ThermalShield: absorb the hit, grant 1.5s i-frames instead of taking damage
+        if self.shield_active:
+            self.shield_active = False
+            self.invincible_timer = 1.5
+            return
+        # KineticPlating: count the hit; every 5th hit signals a cooldown cut
+        if self.run_stats.kinetic_plating_stacks > 0:
+            self.run_stats.kinetic_hits_since_proc += 1
+            if self.run_stats.kinetic_hits_since_proc >= 5:
+                self.run_stats.kinetic_hits_since_proc = 0
+                self.kinetic_proc = True
+        self.hp = max(0, self.hp - amount)
 
     def update(self, dt: float, keys: pygame.key.ScancodeWrapper, mouse_pos: Tuple[int, int]) -> None:
-        # 1. WASD Movement (unaffected by time_scale)
-        dx: float = 0.0
-        dy: float = 0.0
-        if keys[pygame.K_w]:
-            dy -= 1.0
-        if keys[pygame.K_s]:
-            dy += 1.0
-        if keys[pygame.K_a]:
-            dx -= 1.0
-        if keys[pygame.K_d]:
-            dx += 1.0
+        # Recalculate max freeze capacity (may grow via DeepFreeze boon)
+        self.max_freeze_meter = 100.0 + 25.0 * self.run_stats.deep_freeze_stacks
 
-        if dx != 0.0 or dy != 0.0:
-            # Normalize vector to prevent faster diagonal movement
-            length = math.hypot(dx, dy)
-            dx /= length
-            dy /= length
+        # Count down i-frames
+        self.invincible_timer = max(0.0, self.invincible_timer - dt)
 
-        self.x += dx * self.speed * dt
-        self.y += dy * self.speed * dt
+        # --- FlashStep dash (SHIFT, rising-edge) ---
+        shift_down = bool(keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])
+        if shift_down and not self._prev_shift and self.flash_step_charges > 0 and not self.is_dashing:
+            # Direction: WASD input first; fall back to aim angle when idle
+            ddx = float(int(keys[pygame.K_d]) - int(keys[pygame.K_a]))
+            ddy = float(int(keys[pygame.K_s]) - int(keys[pygame.K_w]))
+            if ddx == 0.0 and ddy == 0.0:
+                ddx = math.cos(self.aim_angle)
+                ddy = math.sin(self.aim_angle)
+            else:
+                length = math.hypot(ddx, ddy)
+                ddx /= length
+                ddy /= length
+            dash_speed = 600.0
+            self.dash_vel = (ddx * dash_speed, ddy * dash_speed)
+            self.dash_timer = 0.15
+            self.is_dashing = True
+            # Grant i-frames for the full dash duration
+            self.invincible_timer = max(self.invincible_timer, 0.20)
+            self.flash_step_charges -= 1
+        self._prev_shift = shift_down
+
+        # --- Movement ---
+        if self.is_dashing:
+            # During dash: apply dash velocity, ignore WASD
+            self.x += self.dash_vel[0] * dt
+            self.y += self.dash_vel[1] * dt
+            self.dash_timer -= dt
+            if self.dash_timer <= 0:
+                self.is_dashing = False
+                self.dash_timer = 0.0
+        else:
+            # 1. WASD Movement (unaffected by time_scale)
+            dx: float = 0.0
+            dy: float = 0.0
+            if keys[pygame.K_w]:
+                dy -= 1.0
+            if keys[pygame.K_s]:
+                dy += 1.0
+            if keys[pygame.K_a]:
+                dx -= 1.0
+            if keys[pygame.K_d]:
+                dx += 1.0
+
+            if dx != 0.0 or dy != 0.0:
+                # Normalize vector to prevent faster diagonal movement
+                length = math.hypot(dx, dy)
+                dx /= length
+                dy /= length
+
+            self.x += dx * self.speed * dt
+            self.y += dy * self.speed * dt
 
         # 2. Update Chrono-Freeze meter
+        # Overclock boon reduces drain rate by 15% per stack (capped at 5 stacks)
+        effective_drain = self.freeze_drain_rate * (
+            1.0 - 0.15 * min(self.run_stats.overclock_stacks, 5)
+        )
         if self.is_freezing:
-            self.freeze_meter -= self.freeze_drain_rate * dt
+            self.freeze_meter -= effective_drain * dt
             if self.freeze_meter <= 0.0:
                 self.freeze_meter = 0.0
                 self.is_freezing = False
@@ -62,26 +139,49 @@ class Player:
             mouse_pos[0]), float(mouse_pos[1]))
 
     def draw(self, screen: pygame.Surface) -> None:
+        # I-frame flicker: skip every other draw call while invincible from dashing
+        # (shield i-frames don't flicker — they feel more substantial)
+        if self.invincible_timer > 0 and self.is_dashing:
+            if int(self.invincible_timer * 12) % 2 == 0:
+                return
+
         # Draw Player body (Circle)
         pygame.draw.circle(screen, (0, 255, 100),
                            (int(self.x), int(self.y)), self.radius)
 
-        # Draw Aiming Line
+        # Aiming Line
         end_x = self.x + math.cos(self.aim_angle) * (self.radius + 15)
         end_y = self.y + math.sin(self.aim_angle) * (self.radius + 15)
         pygame.draw.line(screen, (255, 255, 255), (int(
             self.x), int(self.y)), (int(end_x), int(end_y)), 3)
 
-        # Draw Freeze Meter UI near player
+        # Freeze Meter UI near player
         bar_width = 40
         bar_height = 6
         bar_x = self.x - bar_width / 2
         bar_y = self.y - self.radius - 12
         fill_width = (self.freeze_meter / self.max_freeze_meter) * bar_width
 
-        # Background bar
         pygame.draw.rect(screen, (80, 80, 80),
                          (bar_x, bar_y, bar_width, bar_height))
-        # Fill bar (Cyan when freezing, Blue otherwise)
         color = (0, 255, 255) if self.is_freezing else (0, 150, 255)
         pygame.draw.rect(screen, color, (bar_x, bar_y, fill_width, bar_height))
+
+        # --- HUD: ThermalShield indicator ---
+        if self.shield_active:
+            # Pulsing cyan ring above the player
+            pygame.draw.circle(screen, (0, 220, 255),
+                               (int(self.x), int(self.y)), self.radius + 5, 2)
+
+        # --- HUD: FlashStep charge counter ---
+        if self.flash_step_charges > 0:
+            # Small yellow diamond icon below the player with a count number
+            cx, cy = int(self.x), int(self.y) + self.radius + 10
+            size = 5
+            pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
+            pygame.draw.polygon(screen, (255, 210, 50), pts)
+            if self.flash_step_charges > 1:
+                # Draw count next to icon for multiple charges
+                font = pygame.font.SysFont(None, 20)
+                count_surf = font.render(str(self.flash_step_charges), True, (255, 210, 50))
+                screen.blit(count_surf, (cx + size + 2, cy - count_surf.get_height() // 2))
