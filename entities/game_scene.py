@@ -1,10 +1,13 @@
 import pygame
 import random
 from typing import List, Optional
+
 from entities.player import Player
 from entities.enemies import TrackerCube, ShotgunCube, NovaCube, Bullet, BaseEnemy
+
 from utils.math_helpers import get_distance
 from utils.base_scene import BaseScene
+from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
 
 
 class GameScene(BaseScene):
@@ -29,6 +32,11 @@ class GameScene(BaseScene):
         self.spawn_timer: float = 0.0
         self.base_spawn_rate: float = 1.5
 
+        # Scoring
+        self.score: int = 0
+        self.time_alive: float = 0.0
+        self.ui_font: pygame.font.Font = pygame.font.SysFont(None, 36)
+
     def enter(self) -> None:
         """
         Called when starting a new run or returning from the Boons screen.
@@ -50,6 +58,10 @@ class GameScene(BaseScene):
         # Spawn an enemy every 1.5 seconds (scaled by time_scale)
         self.base_spawn_rate = 1.5
 
+        # Scoring reset
+        self.score = 0
+        self.time_alive = 0.0
+
     def handle_events(self, events: List[pygame.event.Event]) -> None:
         """
         Captures single-press actions.
@@ -58,10 +70,10 @@ class GameScene(BaseScene):
             if event.type == pygame.KEYDOWN:
                 # Placeholder shortcut to test the State Machine
                 if event.key == pygame.K_m:
-                    self.next_state = "BOONS"
+                    self.next_state = BOONS_STATE
                 # Shortcut to "die" and return to menu
                 if event.key == pygame.K_ESCAPE:
-                    self.next_state = "MENU"
+                    self.next_state = MAIN_MENU_STATE
 
                 # Toggle Chrono-Freeze
                 if event.key == pygame.K_SPACE:
@@ -88,6 +100,11 @@ class GameScene(BaseScene):
 
         keys = pygame.key.get_pressed()
         mouse_pos = pygame.mouse.get_pos()
+
+        # Update survival time
+        self.time_alive += dt
+        # Passive score gain
+        self.score += 1 * dt
 
         # 1. Handle Chrono-Freeze State & time_scale
         if self.player.is_freezing and self.player.freeze_meter > 0:
@@ -132,7 +149,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
-                    self.next_state = "GAME_OVER"
+                    self.next_state = GAME_OVER_STATE
 
         # 6. Update Enemies & Collision Detection
         for enemy in self.enemies[:]:
@@ -149,7 +166,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.enemies.remove(enemy)
                 if self.player.hp <= 0:
-                    self.next_state = "GAME_OVER"
+                    self.next_state = GAME_OVER_STATE
                 continue
 
             # Check collision: Player Bullet vs Enemy
@@ -161,6 +178,7 @@ class GameScene(BaseScene):
                         self.player_bullets.remove(p_bullet)
                     if enemy in self.enemies:
                         self.enemies.remove(enemy)
+                        self.score += 50  # Award points for destroying enemy
                     break  # Break out of bullet loop since enemy is destroyed
 
         return None
@@ -213,12 +231,15 @@ class GameScene(BaseScene):
         if getattr(self, 'player', None):
             self.player.draw(screen)
 
-            # Draw UI - Top Left Text
-            ui_text = "SURVIVAL ARENA - Press 'SPACE' to Freeze"
+            # Draw UI - Top Middle Freeze Text
+            freeze_text = "Press 'SPACE' to Freeze Time!"
             if self.player.is_freezing:
-                ui_text += " [ACTIVE]"
-            text = self.font.render(ui_text, True, (255, 255, 255))
-            screen.blit(text, (20, 20))
+                freeze_text += " Time Freeze: [ACTIVE]"
+            freeze_surface = self.font.render(
+                freeze_text, True, (255, 255, 255))
+            freeze_rect = freeze_surface.get_rect(
+                center=(self.screen_width / 2, 50))  # Below score text
+            screen.blit(freeze_surface, freeze_rect)
 
             # Draw UI - Bottom Left Chrono-Freeze Meter
             meter_x = 20
@@ -265,3 +286,10 @@ class GameScene(BaseScene):
             hp_label = self.small_font.render(
                 "HULL INTEGRITY", True, (255, 255, 255))
             screen.blit(hp_label, (hp_meter_x, hp_meter_y - 25))
+
+            # Draw UI - Score
+            score_text = self.ui_font.render(
+                f"SCORE: {int(self.score)}", True, (255, 255, 255))
+            score_rect = score_text.get_rect(
+                center=(self.screen_width / 2, 20))
+            screen.blit(score_text, score_rect)

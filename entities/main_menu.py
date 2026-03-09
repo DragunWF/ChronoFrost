@@ -1,6 +1,7 @@
 import pygame
 from typing import List, Optional
 from utils.base_scene import BaseScene
+from utils.constants import PLAY_STATE
 
 
 class MainMenu(BaseScene):
@@ -29,7 +30,7 @@ class MainMenu(BaseScene):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     # Queue up the state switch
-                    self.next_state = "PLAYING"
+                    self.next_state = PLAY_STATE
 
     def update(self, dt: float) -> Optional[str]:
         """
