@@ -64,8 +64,8 @@ class BaseEnemy:
         """Apply knockback velocity then decay it so it reaches ~zero in 0.5 s."""
         self.x += self.knockback_vel[0] * effective_dt
         self.y += self.knockback_vel[1] * effective_dt
-        # Exponential decay: velocity halves in ~0.09s
-        decay = max(0.0, 1.0 - 8.0 * effective_dt)
+        # Slower decay keeps Supernova knockback visible over a longer distance.
+        decay = max(0.0, 1.0 - 4.0 * effective_dt)
         self.knockback_vel[0] *= decay
         self.knockback_vel[1] *= decay
 

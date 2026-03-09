@@ -30,15 +30,19 @@ class BoonsMenu(BaseScene):
         self.font_name: pygame.font.Font = pygame.font.SysFont(None, 30)
         self.font_desc: pygame.font.Font = pygame.font.SysFont(None, 22)
         self.font_hint: pygame.font.Font = pygame.font.SysFont(None, 20)
+        self.font_popup: pygame.font.Font = pygame.font.SysFont(None, 28)
 
         self.run_stats: Optional[RunStats] = None
         self.cards: List[Dict[str, Any]] = []
         self.selected_idx: int = 0        # keyboard/gamepad cursor
         self.hovered_idx: Optional[int] = None   # mouse hover index
         self.next_state: Optional[str] = None
+        self.pending_select_idx: Optional[int] = None
 
         # Cached card rects updated every draw() for mouse hit-testing
         self._card_rects: List[pygame.Rect] = []
+        self._confirm_button_rect: pygame.Rect = pygame.Rect(0, 0, 0, 0)
+        self._cancel_button_rect: pygame.Rect = pygame.Rect(0, 0, 0, 0)
 
     def open_with_stats(self, run_stats: RunStats) -> None:
         """
@@ -49,6 +53,7 @@ class BoonsMenu(BaseScene):
         self.next_state = None
         self.selected_idx = 0
         self.hovered_idx = None
+        self.pending_select_idx = None
 
         available = [b for b in BOON_POOL if b["name"] not in run_stats.selected_boons]
         count = min(3, len(available))
@@ -60,19 +65,23 @@ class BoonsMenu(BaseScene):
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
         for event in events:
+            if self.pending_select_idx is not None:
+                self._handle_confirmation_events(event)
+                continue
+
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     self.selected_idx = (self.selected_idx - 1) % max(1, len(self.cards))
                 elif event.key in (pygame.K_RIGHT, pygame.K_d):
                     self.selected_idx = (self.selected_idx + 1) % max(1, len(self.cards))
                 elif event.key == pygame.K_RETURN:
-                    self._select(self.selected_idx)
+                    self.pending_select_idx = self.selected_idx
                 elif event.key == pygame.K_1 and len(self.cards) >= 1:
-                    self._select(0)
+                    self.pending_select_idx = 0
                 elif event.key == pygame.K_2 and len(self.cards) >= 2:
-                    self._select(1)
+                    self.pending_select_idx = 1
                 elif event.key == pygame.K_3 and len(self.cards) >= 3:
-                    self._select(2)
+                    self.pending_select_idx = 2
 
             elif event.type == pygame.MOUSEMOTION:
                 self.hovered_idx = None
@@ -85,16 +94,30 @@ class BoonsMenu(BaseScene):
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for i, rect in enumerate(self._card_rects):
                     if rect.collidepoint(event.pos):
-                        self._select(i)
+                        self.pending_select_idx = i
                         break
+
+    def _handle_confirmation_events(self, event: pygame.event.Event) -> None:
+        """When a card is chosen, this handles the confirm/cancel dialog input."""
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_RETURN, pygame.K_y):
+                self._select(self.pending_select_idx)
+            elif event.key in (pygame.K_ESCAPE, pygame.K_n, pygame.K_BACKSPACE):
+                self.pending_select_idx = None
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self._confirm_button_rect.collidepoint(event.pos):
+                self._select(self.pending_select_idx)
+            elif self._cancel_button_rect.collidepoint(event.pos):
+                self.pending_select_idx = None
 
     def _select(self, idx: int) -> None:
         """Apply the chosen boon, record it, and return to the game."""
-        if not self.cards or idx >= len(self.cards):
+        if idx is None or not self.cards or idx >= len(self.cards):
             return
         card = self.cards[idx]
         card["apply_fn"](self.run_stats)
         self.run_stats.selected_boons.append(card["name"])
+        self.pending_select_idx = None
         self.next_state = PLAY_STATE
 
     def update(self, dt: float) -> Optional[str]:
@@ -131,11 +154,59 @@ class BoonsMenu(BaseScene):
 
         # Bottom keyboard hint
         hint = self.font_hint.render(
-            "← → to navigate   ENTER to select   (1 / 2 / 3)",
+            "LEFT/RIGHT to navigate   ENTER to pick   (1 / 2 / 3)",
             True,
             (120, 120, 140),
         )
         screen.blit(hint, (sw // 2 - hint.get_width() // 2, sh - 36))
+
+        if self.pending_select_idx is not None and self.pending_select_idx < len(self.cards):
+            self._draw_confirmation_popup(screen)
+
+    def _draw_confirmation_popup(self, screen: pygame.Surface) -> None:
+        """Draw a modal-like confirmation prompt before applying the selected boon."""
+        sw, sh = screen.get_size()
+        card = self.cards[self.pending_select_idx]
+
+        popup_w, popup_h = 420, 190
+        popup_rect = pygame.Rect(sw // 2 - popup_w // 2, sh // 2 - popup_h // 2, popup_w, popup_h)
+
+        shade = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        shade.fill((0, 0, 0, 120))
+        screen.blit(shade, (0, 0))
+
+        pygame.draw.rect(screen, (18, 22, 32), popup_rect, border_radius=12)
+        pygame.draw.rect(screen, (230, 210, 110), popup_rect, 2, border_radius=12)
+
+        title = self.font_popup.render("Confirm Temporal Augment", True, (255, 230, 150))
+        msg = self.font_desc.render(f"Apply {card['name']} for this run?", True, (220, 220, 235))
+        hint = self.font_hint.render("ENTER/Y = confirm   ESC/N = cancel", True, (150, 150, 175))
+        screen.blit(title, (popup_rect.centerx - title.get_width() // 2, popup_rect.y + 24))
+        screen.blit(msg, (popup_rect.centerx - msg.get_width() // 2, popup_rect.y + 74))
+        screen.blit(hint, (popup_rect.centerx - hint.get_width() // 2, popup_rect.y + 102))
+
+        self._confirm_button_rect = pygame.Rect(popup_rect.centerx - 150, popup_rect.bottom - 56, 130, 36)
+        self._cancel_button_rect = pygame.Rect(popup_rect.centerx + 20, popup_rect.bottom - 56, 130, 36)
+
+        pygame.draw.rect(screen, (40, 120, 70), self._confirm_button_rect, border_radius=8)
+        pygame.draw.rect(screen, (110, 50, 60), self._cancel_button_rect, border_radius=8)
+
+        ok_text = self.font_hint.render("CONFIRM", True, (240, 255, 240))
+        no_text = self.font_hint.render("CANCEL", True, (255, 235, 235))
+        screen.blit(
+            ok_text,
+            (
+                self._confirm_button_rect.centerx - ok_text.get_width() // 2,
+                self._confirm_button_rect.centery - ok_text.get_height() // 2,
+            ),
+        )
+        screen.blit(
+            no_text,
+            (
+                self._cancel_button_rect.centerx - no_text.get_width() // 2,
+                self._cancel_button_rect.centery - no_text.get_height() // 2,
+            ),
+        )
 
     # -----------------------------------------------------------------------
     # Card rendering helpers

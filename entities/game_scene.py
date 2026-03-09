@@ -339,8 +339,8 @@ class GameScene(BaseScene):
             # Apply radial knockback: push all enemies away from the player
             for enemy in self.enemies:
                 ang = math.atan2(enemy.y - self.player.y, enemy.x - self.player.x)
-                enemy.knockback_vel[0] = math.cos(ang) * 600.0
-                enemy.knockback_vel[1] = math.sin(ang) * 600.0
+                enemy.knockback_vel[0] = math.cos(ang) * 1200.0
+                enemy.knockback_vel[1] = math.sin(ang) * 1200.0
             self.screen_flash = ScreenFlash((255, 150, 50), 0.35)
             self.text_pops.append(TextPop("SUPERNOVA!", px, py - 30, (255, 130, 30)))
 
