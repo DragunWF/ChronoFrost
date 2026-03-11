@@ -43,7 +43,7 @@ class BaseEnemy:
     def __init__(self, x: float, y: float) -> None:
         self.x: float = x
         self.y: float = y
-        self.size: int = 24
+        self.size: float = 24.0
         self.speed: int = 120
         self.fire_timer: float = 2.5
         self.color: Tuple[int, int, int] = (150, 200, 255)
@@ -51,6 +51,10 @@ class BaseEnemy:
         self.hp: int = 1
         # Knockback velocity set by Supernova; decays exponentially each frame
         self.knockback_vel: List[float] = [0.0, 0.0]
+        
+        self.is_imploding: bool = False
+        self.implosion_timer: float = 0.15
+        self.is_dead: bool = False
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         """
@@ -58,6 +62,17 @@ class BaseEnemy:
         Should be overridden by subclasses.
         Must return a list of Bullet objects (can be empty).
         """
+        effective_dt = dt * time_scale
+        if self.hp <= 0 and not self.is_imploding:
+            self.is_imploding = True
+            
+        if self.is_imploding:
+            self.implosion_timer -= effective_dt
+            # Rapidly scale down size
+            self.size = max(0.0, self.size - (24.0 / 0.15) * effective_dt)
+            if self.implosion_timer <= 0:
+                self.is_dead = True
+
         return []
 
     def _apply_knockback(self, effective_dt: float) -> None:
@@ -90,6 +105,10 @@ class TrackerCube(BaseEnemy):
         self.inner_color = (100, 150, 255)
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
+        super().update(dt, time_scale, target_x, target_y)
+        if self.is_imploding:
+            return []
+
         angle = get_angle(self.x, self.y, target_x, target_y)
         effective_dt = dt * time_scale
 
@@ -116,6 +135,10 @@ class ShotgunCube(BaseEnemy):
         self.inner_color = (255, 180, 50)
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
+        super().update(dt, time_scale, target_x, target_y)
+        if self.is_imploding:
+            return []
+
         angle = get_angle(self.x, self.y, target_x, target_y)
         effective_dt = dt * time_scale
 
@@ -147,6 +170,10 @@ class NovaCube(BaseEnemy):
         self.stopped: bool = False
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
+        super().update(dt, time_scale, target_x, target_y)
+        if self.is_imploding:
+            return []
+
         effective_dt = dt * time_scale
 
         self._apply_knockback(effective_dt)

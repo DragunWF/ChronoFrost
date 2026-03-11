@@ -9,7 +9,7 @@ from entities.items import Powerup, SPAWN_CHANCE, POWERUP_TYPES
 from utils.math_helpers import get_distance
 from utils.base_scene import BaseScene
 from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
-from utils.vfx import TextPop, ScreenFlash
+from utils.vfx import TextPop, ScreenFlash, VFXManager
 from systems.run_stats import RunStats
 
 # Fixed score milestones that trigger the Boons menu.
@@ -30,6 +30,9 @@ class GameScene(BaseScene):
         # Screen dimensions
         self.screen_width: int = 800
         self.screen_height: int = 600
+
+        self.vfx: VFXManager = VFXManager()
+        self.render_surface: pygame.Surface = pygame.Surface((self.screen_width, self.screen_height))
 
         self.player: Player
         self.enemies: List[BaseEnemy] = []
@@ -72,6 +75,9 @@ class GameScene(BaseScene):
         # Instantiate Player in the center of the screen, sharing RunStats
         self.player = Player(self.screen_width / 2, self.screen_height / 2, self.run_stats)
 
+        # Reset VFX Manager
+        self.vfx = VFXManager()
+
         # Lists for enemies, bullets, pickups, and VFX
         self.enemies = []
         self.player_bullets = []
@@ -103,7 +109,10 @@ class GameScene(BaseScene):
                 # Toggle Chrono-Freeze
                 if event.key == pygame.K_SPACE:
                     if getattr(self, 'player', None) and self.player.freeze_meter > 0:
+                        was_freezing = self.player.is_freezing
                         self.player.is_freezing = not self.player.is_freezing
+                        if not was_freezing and self.player.is_freezing:
+                            self.vfx.trigger_shockwave((self.player.x, self.player.y))
 
             # Left Mouse Button to shoot — gated by fire_timer cooldown
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -195,6 +204,9 @@ class GameScene(BaseScene):
                 bullet.x, bullet.y, self.player.x, self.player.y)
             if dist_to_player < bullet.radius + self.player.radius:
                 self.player.take_damage(1)
+                self.vfx.add_shake(15.0)
+                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
+                self.vfx.spawn_bullet_sparks(bullet.x, bullet.y, math.cos(bullet.angle), math.sin(bullet.angle))
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
@@ -207,44 +219,45 @@ class GameScene(BaseScene):
             if new_bullets:
                 self.enemy_bullets.extend(new_bullets)
 
+            if enemy.is_dead:
+                self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
+                self.vfx.spawn_score_popup(enemy.x, enemy.y, 50)
+                self.enemies.remove(enemy)
+                self.score += 50
+                # Random chance to drop a Field Drop at the kill position
+                if random.random() < SPAWN_CHANCE:
+                    self.powerups.append(
+                        Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
+                    )
+                continue
+
             # Check collision: Player vs Enemy (body contact)
             dist_to_player = get_distance(
                 self.player.x, self.player.y, enemy.x, enemy.y)
-            if dist_to_player < self.player.radius + (enemy.size / 2):
+            if dist_to_player < self.player.radius + (enemy.size / 2) and not enemy.is_imploding:
                 self.player.take_damage(1)
-                if enemy in self.enemies:
-                    self.enemies.remove(enemy)
-                    # Drop powerup on contact-kill too
-                    if random.random() < SPAWN_CHANCE:
-                        self.powerups.append(
-                            Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
-                        )
+                self.vfx.add_shake(15.0)
+                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
+                enemy.hp = 0  # Trigger implosion
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
                 continue
 
             # Check collision: Player Bullet vs Enemy
-            for p_bullet in self.player_bullets[:]:
-                dist_to_bullet = get_distance(
-                    p_bullet.x, p_bullet.y, enemy.x, enemy.y)
-                if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
-                    # Apply bullet damage to the enemy
-                    enemy.hp -= p_bullet.damage
-                    # PierceShot: consume one pierce charge rather than destroying bullet
-                    if p_bullet.pierce_count > 0:
-                        p_bullet.pierce_count -= 1
-                    elif p_bullet in self.player_bullets:
-                        self.player_bullets.remove(p_bullet)
-                    # Enemy dies when hp reaches 0
-                    if enemy in self.enemies and enemy.hp <= 0:
-                        self.enemies.remove(enemy)
-                        self.score += 50  # Award points for destroying enemy
-                        # Random chance to drop a Field Drop at the kill position
-                        if random.random() < SPAWN_CHANCE:
-                            self.powerups.append(
-                                Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
-                            )
-                    break  # This enemy is done; move to the next
+            if not enemy.is_imploding:
+                for p_bullet in self.player_bullets[:]:
+                    dist_to_bullet = get_distance(
+                        p_bullet.x, p_bullet.y, enemy.x, enemy.y)
+                    if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
+                        self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(p_bullet.angle), math.sin(p_bullet.angle))
+                        # Apply bullet damage to the enemy
+                        enemy.hp -= p_bullet.damage
+                        # PierceShot: consume one pierce charge rather than destroying bullet
+                        if p_bullet.pierce_count > 0:
+                            p_bullet.pierce_count -= 1
+                        elif p_bullet in self.player_bullets:
+                            self.player_bullets.remove(p_bullet)
+                        break  # This bullet handled
 
         # 7. Update and check Powerup pickups
         for pw in self.powerups[:]:
@@ -252,6 +265,7 @@ class GameScene(BaseScene):
             dist = get_distance(pw.x, pw.y, self.player.x, self.player.y)
             if dist < self.player.radius + pw.pickup_radius:
                 self._apply_powerup(pw)
+                self.vfx.spawn_pickup_ring(pw.x, pw.y, (255, 255, 255))
                 self.powerups.remove(pw)
 
         # 8. Advance floating text labels (remove expired ones)
@@ -261,6 +275,8 @@ class GameScene(BaseScene):
         if self.screen_flash is not None:
             if not self.screen_flash.update(dt):
                 self.screen_flash = None
+                
+        self.vfx.update(dt, self.time_scale)
 
         return None
 
@@ -354,24 +370,24 @@ class GameScene(BaseScene):
         Renders the game world.
         """
         # Draw background
-        screen.fill((20, 30, 40))
+        self.render_surface.fill((20, 30, 40))
 
         # Draw game entities
         for enemy in self.enemies:
-            enemy.draw(screen)
+            enemy.draw(self.render_surface)
 
         for e_bullet in self.enemy_bullets:
-            e_bullet.draw(screen)
+            e_bullet.draw(self.render_surface)
 
         for p_bullet in self.player_bullets:
-            p_bullet.draw(screen)
+            p_bullet.draw(self.render_surface)
 
         # Draw powerups
         for pw in self.powerups:
-            pw.draw(screen)
+            pw.draw(self.render_surface)
 
         if getattr(self, 'player', None):
-            self.player.draw(screen)
+            self.player.draw(self.render_surface)
 
             # Draw UI - Top Middle Freeze Text
             freeze_text = "Press 'SPACE' to Freeze Time!"
@@ -381,7 +397,7 @@ class GameScene(BaseScene):
                 freeze_text, True, (255, 255, 255))
             freeze_rect = freeze_surface.get_rect(
                 center=(self.screen_width / 2, 50))  # Below score text
-            screen.blit(freeze_surface, freeze_rect)
+            self.render_surface.blit(freeze_surface, freeze_rect)
 
             # Draw UI - Bottom Left Chrono-Freeze Meter
             meter_x = 20
@@ -390,7 +406,7 @@ class GameScene(BaseScene):
             meter_height = 20
 
             # Background dark gray rect
-            pygame.draw.rect(screen, (50, 50, 50),
+            pygame.draw.rect(self.render_surface, (50, 50, 50),
                              (meter_x, meter_y, meter_width, meter_height))
 
             # Foreground colored rect
@@ -399,13 +415,13 @@ class GameScene(BaseScene):
             fill_color = (0, 255, 255) if self.player.is_freezing else (
                 0, 150, 255)
             if fill_width > 0:
-                pygame.draw.rect(screen, fill_color,
+                pygame.draw.rect(self.render_surface, fill_color,
                                  (meter_x, meter_y, fill_width, meter_height))
 
             # Text label above the meter
             label_text = self.small_font.render(
                 "CHRONO-CHARGE", True, (255, 255, 255))
-            screen.blit(label_text, (meter_x, meter_y - 25))
+            self.render_surface.blit(label_text, (meter_x, meter_y - 25))
 
             # Draw UI - Bottom Right Health Bar
             hp_meter_width = 200
@@ -414,32 +430,39 @@ class GameScene(BaseScene):
             hp_meter_y = self.screen_height - 40
 
             # Background dark gray rect
-            pygame.draw.rect(screen, (50, 50, 50),
+            pygame.draw.rect(self.render_surface, (50, 50, 50),
                              (hp_meter_x, hp_meter_y, hp_meter_width, hp_meter_height))
 
             # Foreground green rect
             hp_fill_width = (self.player.hp /
                              self.player.max_hp) * hp_meter_width
             if hp_fill_width > 0:
-                pygame.draw.rect(screen, (0, 255, 0),
+                pygame.draw.rect(self.render_surface, (0, 255, 0),
                                  (hp_meter_x, hp_meter_y, hp_fill_width, hp_meter_height))
 
             # Text label above the health bar
             hp_label = self.small_font.render(
                 "HULL INTEGRITY", True, (255, 255, 255))
-            screen.blit(hp_label, (hp_meter_x, hp_meter_y - 25))
+            self.render_surface.blit(hp_label, (hp_meter_x, hp_meter_y - 25))
 
             # Draw UI - Score
             score_text = self.ui_font.render(
                 f"SCORE: {int(self.score)}", True, (255, 255, 255))
             score_rect = score_text.get_rect(
                 center=(self.screen_width / 2, 20))
-            screen.blit(score_text, score_rect)
+            self.render_surface.blit(score_text, score_rect)
 
             # Draw floating text labels (pickups, KineticPlating, etc.)
             for tp in self.text_pops:
-                tp.draw(screen, self.pop_font)
+                tp.draw(self.render_surface, self.pop_font)
+
+            self.vfx.draw_particles(self.render_surface)
+
+            self.vfx.draw_freeze_overlay(self.render_surface, self.player.is_freezing, (self.player.x, self.player.y))
 
         # Screen flash overlay drawn last so it covers everything
         if self.screen_flash is not None:
-            self.screen_flash.draw(screen)
+            self.screen_flash.draw(self.render_surface)
+
+        screen.fill((0, 0, 0))
+        screen.blit(self.render_surface, self.vfx.get_shake_offset())
