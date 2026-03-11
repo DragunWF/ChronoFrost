@@ -17,6 +17,19 @@ class Particle:
     color: Tuple[int, int, int] = (255, 255, 255)
     size: float = 3.0
     active: bool = False
+    p_type: str = 'solid'
+    angle: float = 0.0
+    angular_velocity: float = 0.0
+
+@dataclass
+class FloatingText:
+    """A simple floating text dataclass for object pooling."""
+    x: float = 0.0
+    y: float = 0.0
+    text: str = ""
+    lifetime: float = 0.0
+    max_lifetime: float = 1.0
+    active: bool = False
 
 
 class TextPop:
@@ -109,12 +122,22 @@ class VFXManager:
 
         # Object Pool for particles
         self.particles: List[Particle] = [Particle() for _ in range(200)]
+        self.floating_texts: List[FloatingText] = [FloatingText() for _ in range(20)]
+        
+        self.score_font = pygame.font.SysFont(None, 24)
 
     def _get_free_particle(self) -> Optional[Particle]:
         """Returns the first inactive particle in the pool."""
         for p in self.particles:
             if not p.active:
                 return p
+        return None
+
+    def _get_free_floating_text(self) -> Optional[FloatingText]:
+        """Returns the first inactive floating text in the pool."""
+        for ft in self.floating_texts:
+            if not ft.active:
+                return ft
         return None
 
     def add_shake(self, intensity: float) -> None:
@@ -135,6 +158,7 @@ class VFXManager:
             p = self._get_free_particle()
             if p:
                 p.active = True
+                p.p_type = 'solid'
                 p.x = x
                 p.y = y
                 
@@ -159,6 +183,7 @@ class VFXManager:
             p = self._get_free_particle()
             if p:
                 p.active = True
+                p.p_type = 'solid'
                 p.x = x
                 p.y = y
                 
@@ -173,8 +198,58 @@ class VFXManager:
                 p.color = color
                 p.size = random.uniform(3.0, 6.0)
 
+    def spawn_pickup_ring(self, x: float, y: float, color: Tuple[int, int, int]) -> None:
+        """Spawns a particle that renders as a rapidly expanding hollow circle."""
+        p = self._get_free_particle()
+        if p:
+            p.active = True
+            p.p_type = 'ring'
+            p.x = x
+            p.y = y
+            p.vx = 0.0
+            p.vy = 0.0
+            p.max_lifetime = 0.4
+            p.lifetime = p.max_lifetime
+            p.color = color
+            p.size = 50.0  # Max radius
+
+    def spawn_player_leak(self, x: float, y: float, color: Tuple[int, int, int]) -> None:
+        """Spawns 3-5 slow-moving, spinning hollow squares that drift away from the player."""
+        num_particles = random.randint(3, 5)
+        for _ in range(num_particles):
+            p = self._get_free_particle()
+            if p:
+                p.active = True
+                p.p_type = 'hollow_square'
+                p.x = x
+                p.y = y
+                
+                angle = random.uniform(0, 2 * math.pi)
+                speed = random.uniform(20.0, 60.0)
+                
+                p.vx = math.cos(angle) * speed
+                p.vy = math.sin(angle) * speed
+                p.angle = random.uniform(0, 2 * math.pi)
+                p.angular_velocity = random.uniform(-5.0, 5.0)
+                
+                p.max_lifetime = random.uniform(0.5, 1.0)
+                p.lifetime = p.max_lifetime
+                p.color = color
+                p.size = random.uniform(6.0, 10.0)
+
+    def spawn_score_popup(self, x: float, y: float, score_amount: int) -> None:
+        """Activates a FloatingText object that slowly drifts upward."""
+        ft = self._get_free_floating_text()
+        if ft:
+            ft.active = True
+            ft.x = x
+            ft.y = y
+            ft.text = f"+{score_amount}"
+            ft.max_lifetime = 1.0
+            ft.lifetime = ft.max_lifetime
+
     def update(self, dt: float, time_scale: float = 1.0) -> None:
-        """Updates the state of screen-level effects and particles."""
+        """Updates the state of screen-level effects, particles, and floating text."""
         # Update shake decay (damped spring/friction)
         if self.shake_intensity > 0:
             self.shake_intensity -= self.shake_decay * dt
@@ -197,9 +272,21 @@ class VFXManager:
                 else:
                     p.x += p.vx * dt * time_scale
                     p.y += p.vy * dt * time_scale
-                    # High friction
-                    p.vx *= max(0.0, 1.0 - (dt * time_scale * 5.0))
-                    p.vy *= max(0.0, 1.0 - (dt * time_scale * 5.0))
+                    if p.p_type == 'hollow_square':
+                        p.angle += p.angular_velocity * dt * time_scale
+                    else:
+                        # High friction for sparks and shatter
+                        p.vx *= max(0.0, 1.0 - (dt * time_scale * 5.0))
+                        p.vy *= max(0.0, 1.0 - (dt * time_scale * 5.0))
+
+        # Update floating texts
+        for ft in self.floating_texts:
+            if ft.active:
+                ft.lifetime -= dt * time_scale
+                if ft.lifetime <= 0:
+                    ft.active = False
+                else:
+                    ft.y -= 30.0 * dt * time_scale  # Drift upward
 
     def get_shake_offset(self) -> Tuple[int, int]:
         """Returns a random (x, y) offset based on the current shake intensity."""
@@ -230,15 +317,56 @@ class VFXManager:
             )
 
     def draw_particles(self, surface: pygame.Surface) -> None:
-        """Renders active particles."""
+        """Renders active particles and floating texts."""
         for p in self.particles:
             if p.active:
                 ratio = max(0.0, p.lifetime / p.max_lifetime)
-                current_size = max(1.0, p.size * ratio)
                 alpha = int(255 * ratio)
                 
                 if alpha > 0:
-                    r = int(current_size)
-                    temp_surf = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
-                    pygame.draw.circle(temp_surf, (*p.color, alpha), (r, r), r)
-                    surface.blit(temp_surf, (int(p.x - r), int(p.y - r)), special_flags=pygame.BLEND_RGBA_ADD)
+                    if p.p_type == 'ring':
+                        # Ring expands over time
+                        radius = max(1.0, p.size * (1.0 - ratio))
+                        thickness = max(1, int(3 * ratio))
+                        temp_surf = pygame.Surface((int(radius) * 2 + 2, int(radius) * 2 + 2), pygame.SRCALPHA)
+                        pygame.draw.circle(temp_surf, (*p.color, alpha), (int(radius) + 1, int(radius) + 1), int(radius), thickness)
+                        surface.blit(temp_surf, (int(p.x - radius - 1), int(p.y - radius - 1)), special_flags=pygame.BLEND_RGBA_ADD)
+                    elif p.p_type == 'hollow_square':
+                        current_size = max(1.0, p.size)
+                        temp_surf = pygame.Surface((int(current_size) * 2, int(current_size) * 2), pygame.SRCALPHA)
+                        
+                        # Calculate rotated square corners
+                        half_size = current_size / 2.0
+                        corners = [
+                            (-half_size, -half_size),
+                            (half_size, -half_size),
+                            (half_size, half_size),
+                            (-half_size, half_size)
+                        ]
+                        
+                        rotated_corners = []
+                        cos_a = math.cos(p.angle)
+                        sin_a = math.sin(p.angle)
+                        for cx, cy in corners:
+                            rx = cx * cos_a - cy * sin_a + current_size
+                            ry = cx * sin_a + cy * cos_a + current_size
+                            rotated_corners.append((rx, ry))
+                            
+                        pygame.draw.polygon(temp_surf, (*p.color, alpha), rotated_corners, 2)
+                        surface.blit(temp_surf, (int(p.x - current_size), int(p.y - current_size)), special_flags=pygame.BLEND_RGBA_ADD)
+                    else: # solid
+                        current_size = max(1.0, p.size * ratio)
+                        r = int(current_size)
+                        temp_surf = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
+                        pygame.draw.circle(temp_surf, (*p.color, alpha), (r, r), r)
+                        surface.blit(temp_surf, (int(p.x - r), int(p.y - r)), special_flags=pygame.BLEND_RGBA_ADD)
+
+        # Draw floating texts
+        for ft in self.floating_texts:
+            if ft.active:
+                ratio = max(0.0, ft.lifetime / ft.max_lifetime)
+                alpha = int(255 * ratio)
+                if alpha > 0:
+                    text_surf = self.score_font.render(ft.text, True, (255, 255, 255))
+                    text_surf.set_alpha(alpha)
+                    surface.blit(text_surf, (int(ft.x - text_surf.get_width() / 2), int(ft.y - text_surf.get_height() / 2)))

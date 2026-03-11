@@ -205,6 +205,7 @@ class GameScene(BaseScene):
             if dist_to_player < bullet.radius + self.player.radius:
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
+                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
                 self.vfx.spawn_bullet_sparks(bullet.x, bullet.y, math.cos(bullet.angle), math.sin(bullet.angle))
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
@@ -218,48 +219,45 @@ class GameScene(BaseScene):
             if new_bullets:
                 self.enemy_bullets.extend(new_bullets)
 
+            if enemy.is_dead:
+                self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
+                self.vfx.spawn_score_popup(enemy.x, enemy.y, 50)
+                self.enemies.remove(enemy)
+                self.score += 50
+                # Random chance to drop a Field Drop at the kill position
+                if random.random() < SPAWN_CHANCE:
+                    self.powerups.append(
+                        Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
+                    )
+                continue
+
             # Check collision: Player vs Enemy (body contact)
             dist_to_player = get_distance(
                 self.player.x, self.player.y, enemy.x, enemy.y)
-            if dist_to_player < self.player.radius + (enemy.size / 2):
+            if dist_to_player < self.player.radius + (enemy.size / 2) and not enemy.is_imploding:
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
-                if enemy in self.enemies:
-                    self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
-                    self.enemies.remove(enemy)
-                    # Drop powerup on contact-kill too
-                    if random.random() < SPAWN_CHANCE:
-                        self.powerups.append(
-                            Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
-                        )
+                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
+                enemy.hp = 0  # Trigger implosion
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
                 continue
 
             # Check collision: Player Bullet vs Enemy
-            for p_bullet in self.player_bullets[:]:
-                dist_to_bullet = get_distance(
-                    p_bullet.x, p_bullet.y, enemy.x, enemy.y)
-                if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
-                    self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(p_bullet.angle), math.sin(p_bullet.angle))
-                    # Apply bullet damage to the enemy
-                    enemy.hp -= p_bullet.damage
-                    # PierceShot: consume one pierce charge rather than destroying bullet
-                    if p_bullet.pierce_count > 0:
-                        p_bullet.pierce_count -= 1
-                    elif p_bullet in self.player_bullets:
-                        self.player_bullets.remove(p_bullet)
-                    # Enemy dies when hp reaches 0
-                    if enemy in self.enemies and enemy.hp <= 0:
-                        self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
-                        self.enemies.remove(enemy)
-                        self.score += 50  # Award points for destroying enemy
-                        # Random chance to drop a Field Drop at the kill position
-                        if random.random() < SPAWN_CHANCE:
-                            self.powerups.append(
-                                Powerup(enemy.x, enemy.y, random.choice(POWERUP_TYPES))
-                            )
-                    break  # This enemy is done; move to the next
+            if not enemy.is_imploding:
+                for p_bullet in self.player_bullets[:]:
+                    dist_to_bullet = get_distance(
+                        p_bullet.x, p_bullet.y, enemy.x, enemy.y)
+                    if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
+                        self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(p_bullet.angle), math.sin(p_bullet.angle))
+                        # Apply bullet damage to the enemy
+                        enemy.hp -= p_bullet.damage
+                        # PierceShot: consume one pierce charge rather than destroying bullet
+                        if p_bullet.pierce_count > 0:
+                            p_bullet.pierce_count -= 1
+                        elif p_bullet in self.player_bullets:
+                            self.player_bullets.remove(p_bullet)
+                        break  # This bullet handled
 
         # 7. Update and check Powerup pickups
         for pw in self.powerups[:]:
@@ -267,6 +265,7 @@ class GameScene(BaseScene):
             dist = get_distance(pw.x, pw.y, self.player.x, self.player.y)
             if dist < self.player.radius + pw.pickup_radius:
                 self._apply_powerup(pw)
+                self.vfx.spawn_pickup_ring(pw.x, pw.y, (255, 255, 255))
                 self.powerups.remove(pw)
 
         # 8. Advance floating text labels (remove expired ones)
