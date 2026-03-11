@@ -1,5 +1,6 @@
 import pygame
 from abc import ABC, abstractmethod
+from typing import Optional, List
 
 
 class BaseScene(ABC):
@@ -11,7 +12,7 @@ class BaseScene(ABC):
 
     def __init__(self) -> None:
         # Every scene needs to track its next state target
-        self.next_state: str | None = None
+        self.next_state: Optional[str] = None
 
     @abstractmethod
     def enter(self) -> None:
@@ -22,7 +23,7 @@ class BaseScene(ABC):
         pass
 
     @abstractmethod
-    def handle_events(self, events: list[pygame.event.Event]) -> None:
+    def handle_events(self, events: List[pygame.event.Event]) -> None:
         """
         Processes all Pygame events (keystrokes, mouse clicks, window quits) 
         passed down from the main game loop.
@@ -30,7 +31,7 @@ class BaseScene(ABC):
         pass
 
     @abstractmethod
-    def update(self, dt: float) -> str | None:
+    def update(self, dt: float) -> Optional[str]:
         """
         Handles time-based logic, physics, timers, and AI.
 

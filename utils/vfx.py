@@ -1,4 +1,5 @@
 import pygame
+import random
 from typing import Tuple
 
 
@@ -113,3 +114,73 @@ def draw_text_pop(
     """One-shot helper: renders text centered at (x, y) with no animation."""
     surf = font.render(text, True, color)
     screen.blit(surf, (int(x - surf.get_width() / 2), int(y)))
+
+
+class VFXManager:
+    """Manages global screen-level visual effects like screen shake and overlays."""
+
+    def __init__(self) -> None:
+        self.shake_intensity: float = 0.0
+        self.shake_decay: float = 45.0  # Pixels per second decay
+
+        # Chrono-Shockwave variables
+        self.shockwave_active: bool = False
+        self.shockwave_radius: float = 0.0
+        self.shockwave_thickness: int = 10
+        self.shockwave_speed: float = 1200.0
+        self.shockwave_max_radius: float = 800.0
+        self.shockwave_center: Tuple[float, float] = (0.0, 0.0)
+
+    def add_shake(self, intensity: float) -> None:
+        """Adds to the current screen shake intensity."""
+        self.shake_intensity += intensity
+
+    def trigger_shockwave(self, center: Tuple[float, float]) -> None:
+        """Triggers a rapidly expanding hollow circle from the given center."""
+        self.shockwave_active = True
+        self.shockwave_radius = 0.0
+        self.shockwave_center = center
+        self.shockwave_thickness = 10
+
+    def update(self, dt: float) -> None:
+        """Updates the state of screen-level effects."""
+        # Update shake decay (damped spring/friction)
+        if self.shake_intensity > 0:
+            self.shake_intensity -= self.shake_decay * dt
+            if self.shake_intensity < 0:
+                self.shake_intensity = 0.0
+
+        # Update shockwave
+        if self.shockwave_active:
+            self.shockwave_radius += self.shockwave_speed * dt
+            self.shockwave_thickness = max(1, int(10 * (1.0 - self.shockwave_radius / self.shockwave_max_radius)))
+            if self.shockwave_radius >= self.shockwave_max_radius:
+                self.shockwave_active = False
+
+    def get_shake_offset(self) -> Tuple[int, int]:
+        """Returns a random (x, y) offset based on the current shake intensity."""
+        if self.shake_intensity <= 0:
+            return (0, 0)
+        
+        # Random offset within [-intensity, intensity]
+        dx = int(random.uniform(-self.shake_intensity, self.shake_intensity))
+        dy = int(random.uniform(-self.shake_intensity, self.shake_intensity))
+        return (dx, dy)
+
+    def draw_freeze_overlay(self, surface: pygame.Surface, is_frozen: bool, player_center: Tuple[float, float]) -> None:
+        """Draws the atmospheric tint and the expanding shockwave."""
+        if is_frozen:
+            # Semi-transparent dark blue/purple tint
+            overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+            overlay.fill((20, 10, 50, 100))  # R, G, B, A
+            surface.blit(overlay, (0, 0))
+
+        if self.shockwave_active:
+            # Draw expanding hollow circle
+            pygame.draw.circle(
+                surface,
+                (0, 255, 255),
+                (int(self.shockwave_center[0]), int(self.shockwave_center[1])),
+                int(self.shockwave_radius),
+                self.shockwave_thickness
+            )
