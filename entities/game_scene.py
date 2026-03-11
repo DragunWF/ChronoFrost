@@ -205,6 +205,7 @@ class GameScene(BaseScene):
             if dist_to_player < bullet.radius + self.player.radius:
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
+                self.vfx.spawn_bullet_sparks(bullet.x, bullet.y, math.cos(bullet.angle), math.sin(bullet.angle))
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
@@ -224,6 +225,7 @@ class GameScene(BaseScene):
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
                 if enemy in self.enemies:
+                    self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
                     self.enemies.remove(enemy)
                     # Drop powerup on contact-kill too
                     if random.random() < SPAWN_CHANCE:
@@ -239,6 +241,7 @@ class GameScene(BaseScene):
                 dist_to_bullet = get_distance(
                     p_bullet.x, p_bullet.y, enemy.x, enemy.y)
                 if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
+                    self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(p_bullet.angle), math.sin(p_bullet.angle))
                     # Apply bullet damage to the enemy
                     enemy.hp -= p_bullet.damage
                     # PierceShot: consume one pierce charge rather than destroying bullet
@@ -248,6 +251,7 @@ class GameScene(BaseScene):
                         self.player_bullets.remove(p_bullet)
                     # Enemy dies when hp reaches 0
                     if enemy in self.enemies and enemy.hp <= 0:
+                        self.vfx.spawn_enemy_shatter(enemy.x, enemy.y, enemy.color)
                         self.enemies.remove(enemy)
                         self.score += 50  # Award points for destroying enemy
                         # Random chance to drop a Field Drop at the kill position
@@ -273,7 +277,7 @@ class GameScene(BaseScene):
             if not self.screen_flash.update(dt):
                 self.screen_flash = None
                 
-        self.vfx.update(dt)
+        self.vfx.update(dt, self.time_scale)
 
         return None
 
@@ -452,6 +456,8 @@ class GameScene(BaseScene):
             # Draw floating text labels (pickups, KineticPlating, etc.)
             for tp in self.text_pops:
                 tp.draw(self.render_surface, self.pop_font)
+
+            self.vfx.draw_particles(self.render_surface)
 
             self.vfx.draw_freeze_overlay(self.render_surface, self.player.is_freezing, (self.player.x, self.player.y))
 

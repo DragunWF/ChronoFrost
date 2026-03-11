@@ -1,6 +1,22 @@
 import pygame
 import random
-from typing import Tuple
+import math
+from typing import Tuple, List, Optional
+from dataclasses import dataclass
+
+
+@dataclass
+class Particle:
+    """A simple particle dataclass for object pooling."""
+    x: float = 0.0
+    y: float = 0.0
+    vx: float = 0.0
+    vy: float = 0.0
+    lifetime: float = 0.0
+    max_lifetime: float = 1.0
+    color: Tuple[int, int, int] = (255, 255, 255)
+    size: float = 3.0
+    active: bool = False
 
 
 class TextPop:
@@ -37,46 +53,6 @@ class TextPop:
         surf = font.render(self.text, True, self.color)
         surf.set_alpha(alpha)
         screen.blit(surf, (int(self.x - surf.get_width() / 2), int(self.y)))
-
-
-class Particle:
-    """A single velocity-driven dot that fades out. Used for burst effects."""
-
-    def __init__(
-        self,
-        x: float,
-        y: float,
-        vx: float,
-        vy: float,
-        color: Tuple[int, int, int],
-        radius: int = 3,
-        duration: float = 0.6,
-    ) -> None:
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.vy = vy
-        self.color = color
-        self.radius = radius
-        self.duration = duration
-        self.elapsed: float = 0.0
-
-    def update(self, dt: float) -> bool:
-        """Returns True while alive."""
-        self.elapsed += dt
-        self.x += self.vx * dt
-        self.y += self.vy * dt
-        # Exponential drag
-        self.vx *= max(0.0, 1.0 - dt * 3.0)
-        self.vy *= max(0.0, 1.0 - dt * 3.0)
-        return self.elapsed < self.duration
-
-    def draw(self, screen: pygame.Surface) -> None:
-        alpha = max(0, int(255 * (1.0 - self.elapsed / self.duration)))
-        r = max(1, int(self.radius * (1.0 - self.elapsed / self.duration * 0.5)))
-        surf = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
-        pygame.draw.circle(surf, (*self.color, alpha), (r, r), r)
-        screen.blit(surf, (int(self.x) - r, int(self.y) - r))
 
 
 class ScreenFlash:
@@ -131,6 +107,16 @@ class VFXManager:
         self.shockwave_max_radius: float = 800.0
         self.shockwave_center: Tuple[float, float] = (0.0, 0.0)
 
+        # Object Pool for particles
+        self.particles: List[Particle] = [Particle() for _ in range(200)]
+
+    def _get_free_particle(self) -> Optional[Particle]:
+        """Returns the first inactive particle in the pool."""
+        for p in self.particles:
+            if not p.active:
+                return p
+        return None
+
     def add_shake(self, intensity: float) -> None:
         """Adds to the current screen shake intensity."""
         self.shake_intensity += intensity
@@ -142,8 +128,53 @@ class VFXManager:
         self.shockwave_center = center
         self.shockwave_thickness = 10
 
-    def update(self, dt: float) -> None:
-        """Updates the state of screen-level effects."""
+    def spawn_bullet_sparks(self, x: float, y: float, impact_dir_x: float, impact_dir_y: float) -> None:
+        """Activates 3-5 tiny line/circle particles flying opposite to impact direction."""
+        num_sparks = random.randint(3, 5)
+        for _ in range(num_sparks):
+            p = self._get_free_particle()
+            if p:
+                p.active = True
+                p.x = x
+                p.y = y
+                
+                # Sparks fly opposite to impact direction, plus some spread
+                base_angle = math.atan2(-impact_dir_y, -impact_dir_x)
+                spread = math.radians(45)
+                angle = base_angle + random.uniform(-spread, spread)
+                
+                speed = random.uniform(150.0, 400.0)
+                p.vx = math.cos(angle) * speed
+                p.vy = math.sin(angle) * speed
+                
+                p.max_lifetime = random.uniform(0.15, 0.3)
+                p.lifetime = p.max_lifetime
+                p.color = (255, 200, 50)  # Orange/yellow spark
+                p.size = random.uniform(1.0, 2.5)
+
+    def spawn_enemy_shatter(self, x: float, y: float, color: Tuple[int, int, int]) -> None:
+        """Activates 10-15 square/polygon particles bursting outward in 360 degrees."""
+        num_particles = random.randint(10, 15)
+        for _ in range(num_particles):
+            p = self._get_free_particle()
+            if p:
+                p.active = True
+                p.x = x
+                p.y = y
+                
+                angle = random.uniform(0, 2 * math.pi)
+                speed = random.uniform(50.0, 250.0)
+                
+                p.vx = math.cos(angle) * speed
+                p.vy = math.sin(angle) * speed
+                
+                p.max_lifetime = random.uniform(0.3, 0.6)
+                p.lifetime = p.max_lifetime
+                p.color = color
+                p.size = random.uniform(3.0, 6.0)
+
+    def update(self, dt: float, time_scale: float = 1.0) -> None:
+        """Updates the state of screen-level effects and particles."""
         # Update shake decay (damped spring/friction)
         if self.shake_intensity > 0:
             self.shake_intensity -= self.shake_decay * dt
@@ -156,6 +187,19 @@ class VFXManager:
             self.shockwave_thickness = max(1, int(10 * (1.0 - self.shockwave_radius / self.shockwave_max_radius)))
             if self.shockwave_radius >= self.shockwave_max_radius:
                 self.shockwave_active = False
+
+        # Update particles
+        for p in self.particles:
+            if p.active:
+                p.lifetime -= dt * time_scale
+                if p.lifetime <= 0:
+                    p.active = False
+                else:
+                    p.x += p.vx * dt * time_scale
+                    p.y += p.vy * dt * time_scale
+                    # High friction
+                    p.vx *= max(0.0, 1.0 - (dt * time_scale * 5.0))
+                    p.vy *= max(0.0, 1.0 - (dt * time_scale * 5.0))
 
     def get_shake_offset(self) -> Tuple[int, int]:
         """Returns a random (x, y) offset based on the current shake intensity."""
@@ -184,3 +228,17 @@ class VFXManager:
                 int(self.shockwave_radius),
                 self.shockwave_thickness
             )
+
+    def draw_particles(self, surface: pygame.Surface) -> None:
+        """Renders active particles."""
+        for p in self.particles:
+            if p.active:
+                ratio = max(0.0, p.lifetime / p.max_lifetime)
+                current_size = max(1.0, p.size * ratio)
+                alpha = int(255 * ratio)
+                
+                if alpha > 0:
+                    r = int(current_size)
+                    temp_surf = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
+                    pygame.draw.circle(temp_surf, (*p.color, alpha), (r, r), r)
+                    surface.blit(temp_surf, (int(p.x - r), int(p.y - r)), special_flags=pygame.BLEND_RGBA_ADD)
