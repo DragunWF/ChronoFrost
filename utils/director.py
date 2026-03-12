@@ -9,9 +9,9 @@ class DifficultyDirector:
 
     def increase_level(self) -> None:
         self.level += 1
-        # Aggressive multiplier (0.65) so it starts slow but ramps up very quickly after level 1
+        # Aggressive multiplier (0.75) so it starts slow but ramps up very quickly after level 1
         calculated_cooldown = self.base_spawn_cooldown * \
-            (0.65 ** (self.level - 1))
+            (0.85 ** (self.level - 1))
         # Cap the spawn cooldown so it never goes below min_spawn_cooldown
         self.current_spawn_cooldown = max(
             self.min_spawn_cooldown, calculated_cooldown)
