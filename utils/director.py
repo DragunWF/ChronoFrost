@@ -1,18 +1,17 @@
 class DifficultyDirector:
     def __init__(self) -> None:
         self.level: int = 1
-        # Lowered base cooldown from 2.0 to 1.0 to start with more enemies
-        self.base_spawn_cooldown: float = 1.0
+        # The base cooldown for level 1 (after the initial grace period)
+        self.base_spawn_cooldown: float = 1.55
         # The lowest the spawn cooldown can go (caps the max spawn rate)
         self.min_spawn_cooldown: float = 0.2
         self.current_spawn_cooldown: float = self.base_spawn_cooldown
 
     def increase_level(self) -> None:
         self.level += 1
-        # Modify the multiplier here (e.g., 0.8) to adjust how fast the difficulty ramps up.
-        # Lower values make the spawn cooldown decrease faster, increasing difficulty quicker.
+        # Aggressive multiplier (0.65) so it starts slow but ramps up very quickly after level 1
         calculated_cooldown = self.base_spawn_cooldown * \
-            (0.8 ** (self.level - 1))
+            (0.65 ** (self.level - 1))
         # Cap the spawn cooldown so it never goes below min_spawn_cooldown
         self.current_spawn_cooldown = max(
             self.min_spawn_cooldown, calculated_cooldown)
@@ -28,5 +27,9 @@ class DifficultyDirector:
     def get_ember_multiplier(self) -> float:
         return max(0.5, 1.0 - 0.05 * (self.level - 1))
 
-    def get_spawn_cooldown(self) -> float:
+    def get_spawn_cooldown(self, time_alive: float) -> float:
+        # Give a slow, 5-second grace period at the beginning of the game
+        if self.level == 1 and time_alive < 6.5:
+            return 2.5
+        # After 5 seconds, instantly snap to the fast ramp-up track
         return self.current_spawn_cooldown

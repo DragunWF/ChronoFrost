@@ -185,7 +185,7 @@ class GameScene(BaseScene):
         # 3. Enemy Spawning Logic (affected by time_scale)
         self.spawn_timer -= dt * self.time_scale
         if self.spawn_timer <= 0:
-            self.spawn_timer = self.director.get_spawn_cooldown()
+            self.spawn_timer = self.director.get_spawn_cooldown(self.time_alive)
             self._spawn_enemy()
 
         # 4. Update Player Bullets
