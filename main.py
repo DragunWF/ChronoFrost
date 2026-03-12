@@ -5,13 +5,15 @@ from entities.main_menu import MainMenu
 from entities.game_scene import GameScene
 from entities.boons_menu import BoonsMenu
 from entities.game_over_menu import GameOverMenu
+from entities.leaderboard_scene import LeaderboardScene
 
 from utils.constants import (
     MAIN_MENU_STATE,
     PLAY_STATE,
     GAME_OVER_STATE,
     BOONS_STATE,
-    QUIT_STATE
+    QUIT_STATE,
+    LEADERBOARD_STATE,
 )
 
 # --- Global Configuration ---
@@ -28,10 +30,11 @@ def main():
 
     # Dictionary holding our instantiated state objects.
     states = {
-        MAIN_MENU_STATE: MainMenu(),
-        PLAY_STATE: GameScene(),
-        BOONS_STATE: BoonsMenu(),
-        GAME_OVER_STATE: GameOverMenu()
+        MAIN_MENU_STATE:   MainMenu(),
+        PLAY_STATE:        GameScene(),
+        BOONS_STATE:       BoonsMenu(),
+        GAME_OVER_STATE:   GameOverMenu(),
+        LEADERBOARD_STATE: LeaderboardScene(),
     }
 
     current_state = "MENU"
@@ -72,6 +75,26 @@ def main():
                     # Defensive: clear any stale one-shot transition requested by
                     # GameScene before the menu opened.
                     states[PLAY_STATE].next_state = None
+                elif prev_state == PLAY_STATE and current_state == GAME_OVER_STATE:
+                    # PLAY → GAME_OVER: capture last rendered frame + pass run stats.
+                    # save_data write happens inside enter_with_stats (one write/run).
+                    game = states[PLAY_STATE]
+                    snapshot  = game.render_surface.copy()
+                    player    = getattr(game, "player", None)
+                    player_x  = getattr(player, "x", 400.0)
+                    player_y  = getattr(player, "y", 300.0)
+                    states[GAME_OVER_STATE].enter_with_stats(
+                        score             = int(game.score),
+                        time_alive        = game.time_alive,
+                        enemies_shattered = game.enemies_shattered,
+                        boons_acquired    = (
+                            len(game.run_stats.selected_boons) +
+                            game.powerups_acquired
+                        ),
+                        player_x = player_x,
+                        player_y = player_y,
+                        snapshot = snapshot,
+                    )
                 else:
                     # All other transitions: call enter() to reset the target scene
                     if hasattr(states[current_state], 'enter'):
