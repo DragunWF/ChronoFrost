@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import pygame
 
 from utils.base_scene import BaseScene
-from utils.constants import PLAY_STATE, QUIT_STATE
+from utils.constants import PLAY_STATE, QUIT_STATE, LEADERBOARD_STATE
 from utils.vfx import ScreenFlash
 
 # ---------------------------------------------------------------------------
@@ -308,10 +308,10 @@ class MainMenu(BaseScene):
 
         # --- Main view buttons ---
         btn_w, btn_h = 260, 48
-        gap          = 22
-        # Buttons start roughly at vertical midpoint
-        start_y = sh // 2 + 30
-        labels  = ["START SEQUENCE", "OPTIONS", "TERMINATE"]
+        gap          = 18
+        # Buttons centred below the title
+        start_y = sh // 2
+        labels  = ["START SEQUENCE", "OPTIONS", "RECORDS", "TERMINATE"]
         self._main_buttons = [
             _Button(lbl, pygame.Rect(cx - btn_w // 2, start_y + i * (btn_h + gap), btn_w, btn_h))
             for i, lbl in enumerate(labels)
@@ -349,7 +349,9 @@ class MainMenu(BaseScene):
                     self._pending_play = True
                 elif i == 1: # OPTIONS
                     self._view = "options"
-                elif i == 2: # TERMINATE
+                elif i == 2: # RECORDS
+                    self.next_state = LEADERBOARD_STATE
+                elif i == 3: # TERMINATE
                     self.next_state = QUIT_STATE
                 return
 

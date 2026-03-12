@@ -53,6 +53,8 @@ class GameScene(BaseScene):
         # Scoring
         self.score: int = 0
         self.time_alive: float = 0.0
+        self.enemies_shattered: int = 0
+        self.powerups_acquired: int = 0
         self.ui_font: pygame.font.Font = pygame.font.SysFont(None, 36)
 
         # Upgrade state shared with Player and BoonsMenu
@@ -95,6 +97,8 @@ class GameScene(BaseScene):
         # Scoring reset
         self.score = 0
         self.time_alive = 0.0
+        self.enemies_shattered = 0
+        self.powerups_acquired = 0
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
         """
@@ -224,6 +228,7 @@ class GameScene(BaseScene):
                 self.vfx.spawn_score_popup(enemy.x, enemy.y, 50)
                 self.enemies.remove(enemy)
                 self.score += 50
+                self.enemies_shattered += 1
                 # Random chance to drop a Field Drop at the kill position
                 if random.random() < SPAWN_CHANCE:
                     self.powerups.append(
@@ -340,6 +345,7 @@ class GameScene(BaseScene):
 
     def _apply_powerup(self, pw: Powerup) -> None:
         """Apply a picked-up Field Drop's effect and queue a feedback text pop."""
+        self.powerups_acquired += 1
         px, py = self.player.x, self.player.y
         if pw.type == "ThermalShield":
             self.player.shield_active = True
