@@ -99,6 +99,7 @@ class BoonsMenu(BaseScene):
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for i, rect in enumerate(self._card_rects):
                     if rect.collidepoint(event.pos):
+                        audio_manager.play_ui_select()
                         self.pending_select_idx = i
                         break
 
@@ -113,6 +114,7 @@ class BoonsMenu(BaseScene):
             if self._confirm_button_rect.collidepoint(event.pos):
                 self._select(self.pending_select_idx)
             elif self._cancel_button_rect.collidepoint(event.pos):
+                audio_manager.play_ui_select()
                 self.pending_select_idx = None
 
     def _select(self, idx: int) -> None:

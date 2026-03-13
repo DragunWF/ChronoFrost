@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pygame
 
+from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import PLAY_STATE, QUIT_STATE, LEADERBOARD_STATE
 from utils.vfx import ScreenFlash
@@ -347,6 +348,7 @@ class MainMenu(BaseScene):
     def _handle_main_click(self, pos: Tuple[int, int]) -> None:
         for i, btn in enumerate(self._main_buttons):
             if btn.hovered(pos):
+                audio_manager.play_ui_select()
                 if i == 0:   # START SEQUENCE
                     self._flash = ScreenFlash((80, 200, 255), duration=0.45)
                     self._pending_play = True
@@ -362,6 +364,7 @@ class MainMenu(BaseScene):
         # BACK button
         for btn in self._options_buttons:
             if btn.hovered(pos):
+                audio_manager.play_ui_select()
                 _save_config(self._master_vol, self._sfx_vol)
                 self._apply_volumes()
                 self._view = "main"

@@ -12,6 +12,7 @@ from typing import List, Optional, Tuple
 import pygame
 
 from systems import save_data
+from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import MAIN_MENU_STATE, PLAY_STATE
 
@@ -254,6 +255,7 @@ class GameOverMenu(BaseScene):
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for i, btn in enumerate(self._buttons):
                     if btn.hovered(event.pos):
+                        audio_manager.play_ui_select()
                         self.next_state = PLAY_STATE if i == 0 else MAIN_MENU_STATE
                         return
             elif event.type == pygame.KEYDOWN:

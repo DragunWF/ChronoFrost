@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pygame
 
 from systems import save_data
+from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import MAIN_MENU_STATE
 
@@ -100,6 +101,7 @@ class LeaderboardScene(BaseScene):
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self._button and self._button.hovered(event.pos):
+                    audio_manager.play_ui_select()
                     self.next_state = MAIN_MENU_STATE
             elif event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):

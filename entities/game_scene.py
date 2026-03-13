@@ -104,10 +104,12 @@ class GameScene(BaseScene):
 
     def resume_game(self) -> None:
         """Callback for the resume button."""
+        audio_manager.play_ui_select()
         self.is_paused = False
 
     def quit_to_menu(self) -> None:
         """Callback for the quit button. Resets state and transitions."""
+        audio_manager.play_ui_select()
         self.is_paused = False
         self.next_state = MAIN_MENU_STATE
 
