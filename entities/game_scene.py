@@ -52,6 +52,7 @@ class GameScene(BaseScene):
         self.spawn_timer: float = 0.0
         self.base_spawn_rate: float = 1.0
         self.enemies_per_spawn: int = 1
+        self.grace_period_timer: float = 5.0
 
         # Fire rate: base 300ms cooldown
         self.base_fire_cooldown: float = 0.3
@@ -161,6 +162,7 @@ class GameScene(BaseScene):
         self.spawn_timer = 0.0
         self.base_spawn_rate = 1.0
         self.enemies_per_spawn = 1
+        self.grace_period_timer = 3.0
 
         # Scoring reset
         self.score = 0
@@ -269,14 +271,17 @@ class GameScene(BaseScene):
             )
 
         # 3. Enemy Spawning Logic (affected by time_scale)
-        self.spawn_timer -= dt * self.time_scale
-        if self.spawn_timer <= 0:
-            self.spawn_timer = self.base_spawn_rate
-            # Spawn more enemies as time progresses
-            # +1 enemy every 30 seconds
-            spawn_count = 1 + int(self.time_alive / 60.0)
-            for _ in range(spawn_count):
-                self._spawn_enemy()
+        if self.grace_period_timer > 0:
+            self.grace_period_timer -= dt * self.time_scale
+        else:
+            self.spawn_timer -= dt * self.time_scale
+            if self.spawn_timer <= 0:
+                self.spawn_timer = self.base_spawn_rate
+                # Spawn more enemies as time progresses
+                # +1 enemy every 30 seconds
+                spawn_count = 1 + int(self.time_alive / 60.0)
+                for _ in range(spawn_count):
+                    self._spawn_enemy()
 
         # 4. Update Player Bullets
         for bullet in self.player_bullets[:]:
