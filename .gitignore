@@ -4,6 +4,9 @@ dragunwf-secret
 # macOS
 .DS_Store
 
+# Player generated
+data/save_data.json
+
 # Python/Build
 __pycache__/
 *.py[cod]
