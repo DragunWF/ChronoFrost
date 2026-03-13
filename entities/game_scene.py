@@ -188,6 +188,7 @@ class GameScene(BaseScene):
                         if getattr(self, 'player', None) and self.fire_timer <= 0:
                             for bullet in self._create_player_bullets():
                                 self.player_bullets.append(bullet)
+                            audio_manager.play_shoot()
                             self.fire_timer = self._effective_fire_cooldown()
 
     def update(self, dt: float) -> Optional[str]:

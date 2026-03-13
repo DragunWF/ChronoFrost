@@ -3,6 +3,7 @@ import math
 import random
 from typing import List, Tuple
 from utils.math_helpers import get_angle
+from utils.audio_manager import audio_manager
 
 
 class Bullet:
@@ -71,9 +72,13 @@ class BaseEnemy:
             # Rapidly scale down size
             self.size = max(0.0, self.size - (24.0 / 0.15) * effective_dt)
             if self.implosion_timer <= 0:
-                self.is_dead = True
+                self._death()
 
         return []
+
+    def _death(self) -> None:
+        self.is_dead = True
+        audio_manager.play_enemy_shatter()
 
     def _apply_knockback(self, effective_dt: float) -> None:
         """Apply knockback velocity then decay it so it reaches ~zero in 0.5 s."""

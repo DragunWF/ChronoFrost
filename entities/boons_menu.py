@@ -8,6 +8,8 @@ from utils.constants import PLAY_STATE
 from systems.boons import BOON_POOL
 from systems.run_stats import RunStats
 
+from utils.audio_manager import audio_manager
+
 # ----- Card layout -------------------------------------------------------
 _CARD_W = 210
 _CARD_H = 270
@@ -122,6 +124,7 @@ class BoonsMenu(BaseScene):
         self.run_stats.selected_boons.append(card["name"])
         self.pending_select_idx = None
         self.next_state = PLAY_STATE
+        audio_manager.play_boon_select()
 
     def update(self, dt: float) -> Optional[str]:
         return self.next_state
