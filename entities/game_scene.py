@@ -50,10 +50,11 @@ class GameScene(BaseScene):
 
         self.time_scale: float = 1.0
         self.spawn_timer: float = 0.0
-        self.base_spawn_rate: float = 1.5
+        self.base_spawn_rate: float = 1.0
+        self.enemies_per_spawn: int = 1
 
-        # Fire rate: base 200ms cooldown, gated per click
-        self.base_fire_cooldown: float = 0.2
+        # Fire rate: base 300ms cooldown
+        self.base_fire_cooldown: float = 0.3
         self.fire_timer: float = 0.0
 
         # Scoring
@@ -158,8 +159,8 @@ class GameScene(BaseScene):
         # Core mechanics variables
         self.time_scale = 1.0
         self.spawn_timer = 0.0
-        self.base_spawn_rate = 1.5
-        self.fire_timer = 0.0
+        self.base_spawn_rate = 1.0
+        self.enemies_per_spawn = 1
 
         # Scoring reset
         self.score = 0
@@ -271,7 +272,11 @@ class GameScene(BaseScene):
         self.spawn_timer -= dt * self.time_scale
         if self.spawn_timer <= 0:
             self.spawn_timer = self.base_spawn_rate
-            self._spawn_enemy()
+            # Spawn more enemies as time progresses
+            # +1 enemy every 30 seconds
+            spawn_count = 1 + int(self.time_alive / 30.0)
+            for _ in range(spawn_count):
+                self._spawn_enemy()
 
         # 4. Update Player Bullets
         for bullet in self.player_bullets[:]:
