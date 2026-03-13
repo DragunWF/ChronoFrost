@@ -188,14 +188,8 @@ class GameScene(BaseScene):
                 for btn in self.pause_buttons:
                     btn.handle_event(event)
             else:
-                # Left Mouse Button to shoot — gated by fire_timer cooldown
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        if getattr(self, 'player', None) and self.fire_timer <= 0:
-                            for bullet in self._create_player_bullets():
-                                self.player_bullets.append(bullet)
-                            audio_manager.play_shoot()
-                            self.fire_timer = self._effective_fire_cooldown()
+                # Shooting is now handled in update() with mouse hold detection
+                pass
 
     def update(self, dt: float) -> Optional[str]:
         """
@@ -219,6 +213,15 @@ class GameScene(BaseScene):
 
         # Count down fire cooldown each frame
         self.fire_timer = max(0.0, self.fire_timer - dt)
+
+        # Handle continuous shooting: fire_timer <= 0 and left mouse button held
+        if self.fire_timer <= 0:
+            mouse_pressed = pygame.mouse.get_pressed()
+            if mouse_pressed[0]:  # Left mouse button
+                for bullet in self._create_player_bullets():
+                    self.player_bullets.append(bullet)
+                audio_manager.play_shoot()
+                self.fire_timer = self._effective_fire_cooldown()
 
         # Update survival time
         self.time_alive += dt
@@ -247,6 +250,12 @@ class GameScene(BaseScene):
 
         # 2. Update Player
         self.player.update(dt, keys, mouse_pos)
+
+        # Clamp player position to stay within screen bounds
+        self.player.x = max(self.player.radius, min(
+            self.player.x, self.screen_width - self.player.radius))
+        self.player.y = max(self.player.radius, min(
+            self.player.y, self.screen_height - self.player.radius))
 
         # Handle KineticPlating proc: cut active fire cooldown by 1s
         if self.player.kinetic_proc:
