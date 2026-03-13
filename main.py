@@ -26,7 +26,7 @@ FPS = 60
 async def main():
     """The main entry point and State Machine manager for ChronoFrost."""
     pygame.init()
-    pygame.mixer.init() # Initialize audio system
+    pygame.mixer.init()  # Initialize audio system
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("ChronoFrost")
     clock = pygame.time.Clock()
@@ -50,7 +50,7 @@ async def main():
     while running:
         # Yield to browser to prevent freezing (pygbag requirement)
         await asyncio.sleep(0)
-        
+
         # Delta time in seconds ensures movement is consistent regardless of framerate
         dt = clock.tick(FPS) / 1000.0
         events = pygame.event.get()
@@ -79,7 +79,8 @@ async def main():
 
                 if prev_state == PLAY_STATE and current_state == BOONS_STATE:
                     # PLAY → BOONS: share RunStats with the menu; do NOT reset the game
-                    states[BOONS_STATE].open_with_stats(states[PLAY_STATE].run_stats)
+                    states[BOONS_STATE].open_with_stats(
+                        states[PLAY_STATE].run_stats)
                 elif prev_state == BOONS_STATE and current_state == PLAY_STATE:
                     # BOONS → PLAY: resume the existing run; do NOT call enter()
                     # Defensive: clear any stale one-shot transition requested by
@@ -89,21 +90,21 @@ async def main():
                     # PLAY → GAME_OVER: capture last rendered frame + pass run stats.
                     # save_data write happens inside enter_with_stats (one write/run).
                     game = states[PLAY_STATE]
-                    snapshot  = game.render_surface.copy()
-                    player    = getattr(game, "player", None)
-                    player_x  = getattr(player, "x", 400.0)
-                    player_y  = getattr(player, "y", 300.0)
+                    snapshot = game.render_surface.copy()
+                    player = getattr(game, "player", None)
+                    player_x = getattr(player, "x", 400.0)
+                    player_y = getattr(player, "y", 300.0)
                     states[GAME_OVER_STATE].enter_with_stats(
-                        score             = int(game.score),
-                        time_alive        = game.time_alive,
-                        enemies_shattered = game.enemies_shattered,
-                        boons_acquired    = (
+                        score=int(game.score),
+                        time_alive=game.time_alive,
+                        enemies_shattered=game.enemies_shattered,
+                        boons_acquired=(
                             len(game.run_stats.selected_boons) +
                             game.powerups_acquired
                         ),
-                        player_x = player_x,
-                        player_y = player_y,
-                        snapshot = snapshot,
+                        player_x=player_x,
+                        player_y=player_y,
+                        snapshot=snapshot,
                     )
                 else:
                     # All other transitions: call enter() to reset the target scene

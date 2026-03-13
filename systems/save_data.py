@@ -55,7 +55,8 @@ def _write(data: Dict[str, Any]) -> None:
         with open(_SAVE_PATH, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2)
     except (OSError, IOError):
-        pass  # Non-critical; saves are best-effort (esp. in browser environments)
+        # Non-critical; saves are best-effort (esp. in browser environments)
+        pass
 
 
 def record_run(

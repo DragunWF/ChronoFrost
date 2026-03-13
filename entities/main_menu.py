@@ -55,7 +55,8 @@ def _save_config(master_vol: float, sfx_vol: float) -> None:
             json.dump({"master_vol": master_vol,
                       "sfx_vol": sfx_vol}, fh, indent=2)
     except (OSError, IOError):
-        pass  # Non-critical; silently skip on permission/I/O errors (common in browser)
+        # Non-critical; silently skip on permission/I/O errors (common in browser)
+        pass
 
 
 # ---------------------------------------------------------------------------
