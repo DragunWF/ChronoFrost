@@ -314,7 +314,7 @@ class MainMenu(BaseScene):
         gap = 18
         # Buttons centred below the title
         start_y = sh // 2
-        labels = ["START SEQUENCE", "OPTIONS", "RECORDS", "TERMINATE"]
+        labels = ["START SEQUENCE", "OPTIONS", "RECORDS"]
         self._main_buttons = [
             _Button(lbl, pygame.Rect(cx - btn_w // 2,
                     start_y + i * (btn_h + gap), btn_w, btn_h))
@@ -356,8 +356,6 @@ class MainMenu(BaseScene):
                     self._view = "options"
                 elif i == 2:  # RECORDS
                     self.next_state = LEADERBOARD_STATE
-                elif i == 3:  # TERMINATE
-                    self.next_state = QUIT_STATE
                 return
 
     def _handle_options_click(self, pos: Tuple[int, int]) -> None:
