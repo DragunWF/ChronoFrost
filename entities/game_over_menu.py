@@ -123,11 +123,12 @@ class GameOverMenu(BaseScene):
     _HEADER = "GAME OVER"
 
     def __init__(self) -> None:
-        self.font_title = pygame.font.SysFont(None, 92)
-        self.font_sub = pygame.font.SysFont(None, 34)
-        self.font_stat = pygame.font.SysFont(None, 30)
-        self.font_btn = pygame.font.SysFont(None, 34)
-        self.font_record = pygame.font.SysFont(None, 42)
+        from utils.font_manager import font_manager
+        self.font_title = font_manager.get_font(92)
+        self.font_sub = font_manager.get_font(34)
+        self.font_stat = font_manager.get_font(30)
+        self.font_btn = font_manager.get_font(34)
+        self.font_record = font_manager.get_font(42)
 
         self.next_state: Optional[str] = None
 

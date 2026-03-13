@@ -9,6 +9,7 @@ from systems.boons import BOON_POOL
 from systems.run_stats import RunStats
 
 from utils.audio_manager import audio_manager
+from utils.font_manager import font_manager
 
 # ----- Card layout -------------------------------------------------------
 _CARD_W = 210
@@ -28,11 +29,11 @@ class BoonsMenu(BaseScene):
     """
 
     def __init__(self) -> None:
-        self.font_title: pygame.font.Font = pygame.font.SysFont(None, 52)
-        self.font_name: pygame.font.Font = pygame.font.SysFont(None, 30)
-        self.font_desc: pygame.font.Font = pygame.font.SysFont(None, 22)
-        self.font_hint: pygame.font.Font = pygame.font.SysFont(None, 20)
-        self.font_popup: pygame.font.Font = pygame.font.SysFont(None, 28)
+        self.font_title: pygame.font.Font = font_manager.get_font(52)
+        self.font_name: pygame.font.Font = font_manager.get_font(30)
+        self.font_desc: pygame.font.Font = font_manager.get_font(22)
+        self.font_hint: pygame.font.Font = font_manager.get_font(20)
+        self.font_popup: pygame.font.Font = font_manager.get_font(28)
 
         self.run_stats: Optional[RunStats] = None
         self.cards: List[Dict[str, Any]] = []

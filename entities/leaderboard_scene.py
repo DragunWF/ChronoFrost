@@ -67,11 +67,12 @@ class LeaderboardScene(BaseScene):
     """Read-only view of the top-10 leaderboard and cumulative lifetime stats."""
 
     def __init__(self) -> None:
-        self.font_title = pygame.font.SysFont(None, 68)
-        self.font_col_hdr = pygame.font.SysFont(None, 26)
-        self.font_row = pygame.font.SysFont(None, 28)
-        self.font_stat = pygame.font.SysFont(None, 26)
-        self.font_btn = pygame.font.SysFont(None, 34)
+        from utils.font_manager import font_manager
+        self.font_title = font_manager.get_font(68)
+        self.font_col_hdr = font_manager.get_font(26)
+        self.font_row = font_manager.get_font(28)
+        self.font_stat = font_manager.get_font(26)
+        self.font_btn = font_manager.get_font(34)
 
         self.next_state: Optional[str] = None
 
