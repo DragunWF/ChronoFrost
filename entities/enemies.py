@@ -133,12 +133,21 @@ class BaseEnemy:
 
 
 class TrackerCube(BaseEnemy):
+    _sprite: pygame.Surface | None = None
+    _original_size: float = 24.0
+
     def __init__(self, x: float, y: float) -> None:
         super().__init__(x, y)
         self.speed: int = 120
         self.fire_timer: float = 2.0
         self.color = (50, 100, 255)       # Blue
         self.inner_color = (100, 150, 255)
+
+        # Load sprite if not already loaded
+        if TrackerCube._sprite is None:
+            raw_sprite = pygame.image.load(
+                "assets/sprites/tracker_cube.png").convert_alpha()
+            TrackerCube._sprite = raw_sprite
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         super().update(dt, time_scale, target_x, target_y)
@@ -161,14 +170,40 @@ class TrackerCube(BaseEnemy):
 
         return []
 
+    def draw(self, screen: pygame.Surface) -> None:
+        if TrackerCube._sprite is not None:
+            # Scale sprite based on current size
+            scale_factor = self.size / TrackerCube._original_size
+            new_width = max(
+                1, int(TrackerCube._sprite.get_width() * scale_factor))
+            new_height = max(
+                1, int(TrackerCube._sprite.get_height() * scale_factor))
+            scaled_sprite = pygame.transform.smoothscale(
+                TrackerCube._sprite, (new_width, new_height))
+            rect = scaled_sprite.get_rect(
+                center=(int(self.x), int(self.y)))
+            screen.blit(scaled_sprite, rect)
+        else:
+            # Fallback to base drawing if sprite fails to load
+            super().draw(screen)
+
 
 class ShotgunCube(BaseEnemy):
+    _sprite: pygame.Surface | None = None
+    _original_size: float = 24.0
+
     def __init__(self, x: float, y: float) -> None:
         super().__init__(x, y)
         self.speed: int = 70  # Slower movement
         self.fire_timer: float = 3.0
         self.color = (255, 140, 0)       # Orange
         self.inner_color = (255, 180, 50)
+
+        # Load sprite if not already loaded
+        if ShotgunCube._sprite is None:
+            raw_sprite = pygame.image.load(
+                "assets/sprites/shotgun_cube.png").convert_alpha()
+            ShotgunCube._sprite = raw_sprite
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         super().update(dt, time_scale, target_x, target_y)
@@ -195,8 +230,28 @@ class ShotgunCube(BaseEnemy):
 
         return []
 
+    def draw(self, screen: pygame.Surface) -> None:
+        if ShotgunCube._sprite is not None:
+            # Scale sprite based on current size
+            scale_factor = self.size / ShotgunCube._original_size
+            new_width = max(
+                1, int(ShotgunCube._sprite.get_width() * scale_factor))
+            new_height = max(
+                1, int(ShotgunCube._sprite.get_height() * scale_factor))
+            scaled_sprite = pygame.transform.smoothscale(
+                ShotgunCube._sprite, (new_width, new_height))
+            rect = scaled_sprite.get_rect(
+                center=(int(self.x), int(self.y)))
+            screen.blit(scaled_sprite, rect)
+        else:
+            # Fallback to base drawing if sprite fails to load
+            super().draw(screen)
+
 
 class NovaCube(BaseEnemy):
+    _sprite: pygame.Surface | None = None
+    _original_size: float = 24.0
+
     def __init__(self, x: float, y: float) -> None:
         super().__init__(x, y)
         self.speed: int = 100
@@ -204,6 +259,12 @@ class NovaCube(BaseEnemy):
         self.color = (150, 50, 255)       # Purple
         self.inner_color = (200, 100, 255)
         self.stopped: bool = False
+
+        # Load sprite if not already loaded
+        if NovaCube._sprite is None:
+            raw_sprite = pygame.image.load(
+                "assets/sprites/nova_cube.png").convert_alpha()
+            NovaCube._sprite = raw_sprite
 
     def update(self, dt: float, time_scale: float, target_x: float, target_y: float) -> List[Bullet]:
         super().update(dt, time_scale, target_x, target_y)
@@ -237,3 +298,20 @@ class NovaCube(BaseEnemy):
             return bullets
 
         return []
+
+    def draw(self, screen: pygame.Surface) -> None:
+        if NovaCube._sprite is not None:
+            # Scale sprite based on current size
+            scale_factor = self.size / NovaCube._original_size
+            new_width = max(
+                1, int(NovaCube._sprite.get_width() * scale_factor))
+            new_height = max(
+                1, int(NovaCube._sprite.get_height() * scale_factor))
+            scaled_sprite = pygame.transform.smoothscale(
+                NovaCube._sprite, (new_width, new_height))
+            rect = scaled_sprite.get_rect(
+                center=(int(self.x), int(self.y)))
+            screen.blit(scaled_sprite, rect)
+        else:
+            # Fallback to base drawing if sprite fails to load
+            super().draw(screen)
