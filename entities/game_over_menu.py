@@ -15,6 +15,7 @@ from systems import save_data
 from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import MAIN_MENU_STATE, PLAY_STATE
+from utils.font_manager import font_manager
 
 # ---------------------------------------------------------------------------
 # Colour palette
@@ -123,7 +124,6 @@ class GameOverMenu(BaseScene):
     _HEADER = "GAME OVER"
 
     def __init__(self) -> None:
-        from utils.font_manager import font_manager
         self.font_title = font_manager.get_font(92)
         self.font_sub = font_manager.get_font(34)
         self.font_stat = font_manager.get_font(30)

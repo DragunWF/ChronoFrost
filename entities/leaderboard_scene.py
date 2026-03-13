@@ -12,6 +12,7 @@ from systems import save_data
 from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import MAIN_MENU_STATE
+from utils.font_manager import font_manager
 
 # ---------------------------------------------------------------------------
 # Icy colour palette (mirrors main_menu.py)
@@ -67,7 +68,6 @@ class LeaderboardScene(BaseScene):
     """Read-only view of the top-10 leaderboard and cumulative lifetime stats."""
 
     def __init__(self) -> None:
-        from utils.font_manager import font_manager
         self.font_title = font_manager.get_font(68)
         self.font_col_hdr = font_manager.get_font(26)
         self.font_row = font_manager.get_font(28)
