@@ -274,7 +274,7 @@ class GameScene(BaseScene):
             self.spawn_timer = self.base_spawn_rate
             # Spawn more enemies as time progresses
             # +1 enemy every 30 seconds
-            spawn_count = 1 + int(self.time_alive / 30.0)
+            spawn_count = 1 + int(self.time_alive / 60.0)
             for _ in range(spawn_count):
                 self._spawn_enemy()
 
