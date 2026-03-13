@@ -15,6 +15,7 @@ from utils.constants import (
     QUIT_STATE,
     LEADERBOARD_STATE,
 )
+from utils.audio_manager import audio_manager
 
 # --- Global Configuration ---
 WIDTH, HEIGHT = 800, 600
@@ -24,6 +25,7 @@ FPS = 60
 def main():
     """The main entry point and State Machine manager for ChronoFrost."""
     pygame.init()
+    pygame.mixer.init() # Initialize audio system
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("ChronoFrost")
     clock = pygame.time.Clock()
@@ -66,6 +68,10 @@ def main():
             if next_state in states:
                 prev_state = current_state
                 current_state = next_state
+
+                # Audio transition logic: stop music if leaving GameScene
+                if prev_state == PLAY_STATE and current_state != BOONS_STATE:
+                    audio_manager.stop_music()
 
                 if prev_state == PLAY_STATE and current_state == BOONS_STATE:
                     # PLAY → BOONS: share RunStats with the menu; do NOT reset the game
