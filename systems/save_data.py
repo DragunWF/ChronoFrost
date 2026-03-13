@@ -7,16 +7,13 @@ from __future__ import annotations
 import copy
 import datetime
 import json
-import os
 from typing import Any, Dict, List, Tuple
 
 # ---------------------------------------------------------------------------
 # Path & schema
 # ---------------------------------------------------------------------------
 
-_SAVE_PATH = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "save_data.json")
-)
+_SAVE_PATH = "data/save_data.json"
 
 _MAX_LEADERBOARD = 10
 
@@ -48,7 +45,8 @@ def load() -> Dict[str, Any]:
         if not isinstance(raw.get("lifetime_stats"), dict):
             raise ValueError("bad lifetime_stats")
         return raw
-    except (FileNotFoundError, json.JSONDecodeError, ValueError, TypeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, ValueError, TypeError, OSError, IOError):
+        # Return blank template on any I/O error (common in browser environments)
         return _blank()
 
 
@@ -56,8 +54,8 @@ def _write(data: Dict[str, Any]) -> None:
     try:
         with open(_SAVE_PATH, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2)
-    except OSError:
-        pass  # Non-critical; saves are best-effort
+    except (OSError, IOError):
+        pass  # Non-critical; saves are best-effort (esp. in browser environments)
 
 
 def record_run(

@@ -1,5 +1,4 @@
 import pygame
-import os
 
 
 class FontManager:
@@ -10,7 +9,6 @@ class FontManager:
 
     def __init__(self) -> None:
         pygame.font.init()
-        self.font_path: str = "assets/fonts/game_font.ttf"
         self._cache: dict[int, pygame.font.Font] = {}
 
     def get_font(self, size: int) -> pygame.font.Font:
@@ -25,16 +23,14 @@ class FontManager:
 
         if scaled_size not in self._cache:
             try:
-                # Attempt to load the custom font
-                if not os.path.exists(self.font_path):
-                    raise FileNotFoundError(
-                        f"Font file missing at {self.font_path}")
+                # Attempt to load the custom font (pygbag-friendly relative path)
+                font_path = "assets/fonts/game_font.ttf"
                 self._cache[scaled_size] = pygame.font.Font(
-                    self.font_path, scaled_size)
+                    font_path, scaled_size)
             except Exception as e:
                 # Safe fallback to avoid game crash
                 print(
-                    f"FontManager: Failed to load custom font '{self.font_path}' (size {scaled_size}). Error: {e}. Using fallback.")
+                    f"FontManager: Failed to load custom font (size {scaled_size}). Error: {e}. Using fallback.")
                 self._cache[scaled_size] = pygame.font.SysFont(
                     None, scaled_size)
 

@@ -130,10 +130,10 @@ class GameScene(BaseScene):
 
         # Audio integration: Randomly select between the two available tracks
         audio_manager.play_random_music([
-            "assets/audio/background_music_1.mp3",
-            "assets/audio/background_music_2.mp3",
-            "assets/audio/background_music_3.mp3",
-            "assets/audio/background_music_4.mp3"
+            "assets/audio/background_music_1.ogg",
+            "assets/audio/background_music_2.ogg",
+            "assets/audio/background_music_3.ogg",
+            "assets/audio/background_music_4.ogg"
         ], loop=True)
 
         # Fresh run stats every new game

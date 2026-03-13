@@ -1,6 +1,5 @@
 import json
 import math
-import os
 import random
 from typing import Dict, List, Optional, Tuple
 
@@ -28,10 +27,8 @@ _TRACK_FILL = (65, 168, 255)
 _THUMB = (195, 235, 255)
 _LABEL_COLOR = (140, 170, 200)
 
-# config.json lives at the workspace root (one level above entities/)
-_CONFIG_PATH = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "config.json")
-)
+# config.json lives at the workspace root
+_CONFIG_PATH = "config.json"
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +44,8 @@ def _load_config() -> Dict[str, float]:
             "master_vol": float(raw.get("master_vol", 1.0)),
             "sfx_vol":    float(raw.get("sfx_vol",    1.0)),
         }
-    except (FileNotFoundError, json.JSONDecodeError, ValueError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, ValueError, OSError, IOError):
+        # Return defaults on any I/O error (common in browser environments)
         return defaults
 
 
@@ -56,8 +54,8 @@ def _save_config(master_vol: float, sfx_vol: float) -> None:
         with open(_CONFIG_PATH, "w", encoding="utf-8") as fh:
             json.dump({"master_vol": master_vol,
                       "sfx_vol": sfx_vol}, fh, indent=2)
-    except OSError:
-        pass  # Non-critical; silently skip on permission errors
+    except (OSError, IOError):
+        pass  # Non-critical; silently skip on permission/I/O errors (common in browser)
 
 
 # ---------------------------------------------------------------------------

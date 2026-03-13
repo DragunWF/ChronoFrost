@@ -1,4 +1,3 @@
-import os
 import random
 import pygame
 from typing import List
@@ -76,17 +75,16 @@ class AudioManager:
     def play_enemy_shatter(self) -> None:
         random.choice(self.sfx_enemy_shatter_list).play()
 
-    # --- Background Music Methods (Legacy) ---
     def load_music(self, path: str) -> bool:
-        if not os.path.exists(path):
-            print(f"AudioManager: Audio file not found at {path}")
+        if not path or len(path) == 0:
+            print(f"AudioManager: Invalid path")
             return False
 
         try:
             pygame.mixer.music.load(path)
             self.current_music = path
             return True
-        except pygame.error as e:
+        except (pygame.error, FileNotFoundError, OSError, IOError) as e:
             print(f"AudioManager: Failed to load music {path}: {e}")
             self.current_music = None
             return False

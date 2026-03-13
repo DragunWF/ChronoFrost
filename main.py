@@ -1,5 +1,6 @@
 import pygame
 import sys
+import asyncio
 
 from entities.main_menu import MainMenu
 from entities.game_scene import GameScene
@@ -22,7 +23,7 @@ WIDTH, HEIGHT = 800, 600
 FPS = 60
 
 
-def main():
+async def main():
     """The main entry point and State Machine manager for ChronoFrost."""
     pygame.init()
     pygame.mixer.init() # Initialize audio system
@@ -47,6 +48,9 @@ def main():
 
     running = True
     while running:
+        # Yield to browser to prevent freezing (pygbag requirement)
+        await asyncio.sleep(0)
+        
         # Delta time in seconds ensures movement is consistent regardless of framerate
         dt = clock.tick(FPS) / 1000.0
         events = pygame.event.get()
@@ -119,4 +123,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
