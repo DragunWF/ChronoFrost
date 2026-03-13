@@ -51,7 +51,7 @@ class BaseEnemy:
         self.hp: int = 1
         # Knockback velocity set by Supernova; decays exponentially each frame
         self.knockback_vel: List[float] = [0.0, 0.0]
-        
+
         self.is_imploding: bool = False
         self.implosion_timer: float = 0.15
         self.is_dead: bool = False
@@ -65,7 +65,7 @@ class BaseEnemy:
         effective_dt = dt * time_scale
         if self.hp <= 0 and not self.is_imploding:
             self.is_imploding = True
-            
+
         if self.is_imploding:
             self.implosion_timer -= effective_dt
             # Rapidly scale down size

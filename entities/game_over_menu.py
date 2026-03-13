@@ -18,16 +18,16 @@ from utils.constants import MAIN_MENU_STATE, PLAY_STATE
 # ---------------------------------------------------------------------------
 # Colour palette
 # ---------------------------------------------------------------------------
-_BG_FILL   = (5, 8, 14)
+_BG_FILL = (5, 8, 14)
 _TITLE_CLR = (220, 55, 55)
-_DIM_TEXT  = (100, 120, 140)
-_STAT_KEY  = (120, 148, 172)
-_STAT_VAL  = (220, 235, 255)
-_BTN_IDLE  = (80, 95, 115)
-_BTN_HOV   = (235, 248, 255)
-_BDR_IDLE  = (38, 78, 138)
-_BDR_HOV   = (80, 190, 255)
-_GOLD      = (255, 210, 50)
+_DIM_TEXT = (100, 120, 140)
+_STAT_KEY = (120, 148, 172)
+_STAT_VAL = (220, 235, 255)
+_BTN_IDLE = (80, 95, 115)
+_BTN_HOV = (235, 248, 255)
+_BDR_IDLE = (38, 78, 138)
+_BDR_HOV = (80, 190, 255)
+_GOLD = (255, 210, 50)
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class _Fountain:
 class _Button:
     def __init__(self, label: str, rect: pygame.Rect) -> None:
         self.label = label
-        self.rect  = rect
+        self.rect = rect
 
     def hovered(self, pos: Tuple[int, int]) -> bool:
         return self.rect.collidepoint(pos)
@@ -92,12 +92,12 @@ class _Button:
     ) -> None:
         border = _BDR_HOV if is_hov else _BDR_IDLE
         pygame.draw.rect(screen, border, self.rect, 2, border_radius=4)
-        text  = f"> {self.label} <" if is_hov else self.label
+        text = f"> {self.label} <" if is_hov else self.label
         color = _BTN_HOV if is_hov else _BTN_IDLE
-        surf  = font.render(text, True, color)
+        surf = font.render(text, True, color)
         screen.blit(
             surf,
-            (self.rect.centerx - surf.get_width()  // 2,
+            (self.rect.centerx - surf.get_width() // 2,
              self.rect.centery - surf.get_height() // 2),
         )
 
@@ -115,40 +115,40 @@ class GameOverMenu(BaseScene):
     safe fallback that goes directly to the UI phase without saving any stats.
     """
 
-    _ASH_COUNT    = 28
-    _SHARD_COUNT  = 14
-    _SHATTER_DUR  = 1.6    # seconds of shard animation before typewriter
-    _CHAR_DELAY   = 0.08   # seconds per typewriter character
-    _HEADER       = "GAME OVER"
+    _ASH_COUNT = 28
+    _SHARD_COUNT = 14
+    _SHATTER_DUR = 1.6    # seconds of shard animation before typewriter
+    _CHAR_DELAY = 0.08   # seconds per typewriter character
+    _HEADER = "GAME OVER"
 
     def __init__(self) -> None:
-        self.font_title  = pygame.font.SysFont(None, 92)
-        self.font_sub    = pygame.font.SysFont(None, 34)
-        self.font_stat   = pygame.font.SysFont(None, 30)
-        self.font_btn    = pygame.font.SysFont(None, 34)
+        self.font_title = pygame.font.SysFont(None, 92)
+        self.font_sub = pygame.font.SysFont(None, 34)
+        self.font_stat = pygame.font.SysFont(None, 30)
+        self.font_btn = pygame.font.SysFont(None, 34)
         self.font_record = pygame.font.SysFont(None, 42)
 
         self.next_state: Optional[str] = None
 
         # Run data (populated by enter_with_stats)
-        self._score:      int   = 0
+        self._score:      int = 0
         self._time_alive: float = 0.0
-        self._enemies:    int   = 0
-        self._boons:      int   = 0
+        self._enemies:    int = 0
+        self._boons:      int = 0
 
         self._is_new_record: bool = False
-        self._record_rank:   int  = 0
+        self._record_rank:   int = 0
 
         # Darkened snapshot of the last gameplay frame
         self._bg: Optional[pygame.Surface] = None
 
         # Particle lists
-        self._shards:   List[_Shard]    = []
-        self._ash:      List[_Ash]      = []
+        self._shards:   List[_Shard] = []
+        self._ash:      List[_Ash] = []
         self._fountain: List[_Fountain] = []
 
         # Phase state machine: "shatter" → "typewriter" → "ui"
-        self._phase:       str   = "ui"
+        self._phase:       str = "ui"
         self._phase_timer: float = 0.0
 
         # Typewriter
@@ -172,20 +172,20 @@ class GameOverMenu(BaseScene):
         Fallback reset — skips stats persistence and goes straight to UI.
         Normally ``enter_with_stats()`` is used instead.
         """
-        self.next_state      = None
-        self._score          = 0
-        self._time_alive     = 0.0
-        self._enemies        = 0
-        self._boons          = 0
-        self._is_new_record  = False
-        self._record_rank    = 0
-        self._bg             = None
-        self._shards         = []
-        self._fountain       = []
-        self._pulse_t        = 0.0
-        self._phase          = "ui"
-        self._phase_timer    = 0.0
-        self._tw_revealed    = len(self._HEADER)
+        self.next_state = None
+        self._score = 0
+        self._time_alive = 0.0
+        self._enemies = 0
+        self._boons = 0
+        self._is_new_record = False
+        self._record_rank = 0
+        self._bg = None
+        self._shards = []
+        self._fountain = []
+        self._pulse_t = 0.0
+        self._phase = "ui"
+        self._phase_timer = 0.0
+        self._tw_revealed = len(self._HEADER)
 
         surf = pygame.display.get_surface()
         sw, sh = surf.get_size() if surf else (800, 600)
@@ -213,15 +213,15 @@ class GameOverMenu(BaseScene):
             score, time_alive, enemies_shattered, boons_acquired
         )
 
-        self._score      = score
+        self._score = score
         self._time_alive = time_alive
-        self._enemies    = enemies_shattered
-        self._boons      = boons_acquired
+        self._enemies = enemies_shattered
+        self._boons = boons_acquired
 
         # Build darkened background from the captured game frame
         if snapshot is not None:
             self._bg = snapshot.copy()
-            overlay  = pygame.Surface(self._bg.get_size())
+            overlay = pygame.Surface(self._bg.get_size())
             overlay.set_alpha(190)
             overlay.fill((5, 8, 18))
             self._bg.blit(overlay, (0, 0))
@@ -231,14 +231,14 @@ class GameOverMenu(BaseScene):
         surf = pygame.display.get_surface()
         sw, sh = surf.get_size() if surf else (800, 600)
 
-        self._shards   = self._make_shards(player_x, player_y)
-        self._ash      = self._make_ash(sw, sh, spread=True)
+        self._shards = self._make_shards(player_x, player_y)
+        self._ash = self._make_ash(sw, sh, spread=True)
         self._fountain = []   # created lazily when "ui" phase begins
 
-        self._phase       = "shatter"
+        self._phase = "shatter"
         self._phase_timer = 0.0
         self._tw_revealed = 0
-        self._pulse_t     = 0.0
+        self._pulse_t = 0.0
 
         self._build_layout(sw, sh)
 
@@ -269,7 +269,7 @@ class GameOverMenu(BaseScene):
             self._update_shards(dt)
             self._update_ash(dt)
             if self._phase_timer >= self._SHATTER_DUR:
-                self._phase       = "typewriter"
+                self._phase = "typewriter"
                 self._phase_timer = 0.0
 
         elif self._phase == "typewriter":
@@ -315,7 +315,7 @@ class GameOverMenu(BaseScene):
     # -----------------------------------------------------------------------
 
     def _enter_ui_phase(self) -> None:
-        self._phase       = "ui"
+        self._phase = "ui"
         self._phase_timer = 0.0
         self._tw_revealed = len(self._HEADER)
         # Spawn the celebration fountain now (not during shatter so it stays alive)
@@ -337,13 +337,13 @@ class GameOverMenu(BaseScene):
             s.lifetime -= dt
             if s.lifetime <= 0:
                 continue
-            frac    = max(0.0, s.lifetime / s.max_lifetime)
+            frac = max(0.0, s.lifetime / s.max_lifetime)
             s.alpha = 255.0 * frac
-            s.x    += s.vx * dt
-            s.y    += s.vy * dt
-            s.vy   += 120.0 * dt          # gentle gravity
-            s.vx   *= max(0.0, 1.0 - dt * 1.2)
-            s.vy   *= max(0.0, 1.0 - dt * 0.9)
+            s.x += s.vx * dt
+            s.y += s.vy * dt
+            s.vy += 120.0 * dt          # gentle gravity
+            s.vx *= max(0.0, 1.0 - dt * 1.2)
+            s.vy *= max(0.0, 1.0 - dt * 0.9)
             s.angle += s.spin * dt
 
     def _update_ash(self, dt: float) -> None:
@@ -359,8 +359,8 @@ class GameOverMenu(BaseScene):
             f.lifetime -= dt
             if f.lifetime <= 0:
                 continue
-            f.x  += f.vx * dt
-            f.y  += f.vy * dt
+            f.x += f.vx * dt
+            f.y += f.vy * dt
             f.vy += 220.0 * dt   # gravity pulls them back down
 
     # -----------------------------------------------------------------------
@@ -372,9 +372,9 @@ class GameOverMenu(BaseScene):
             if s.lifetime <= 0:
                 continue
             alpha = max(0, int(s.alpha))
-            sz    = max(2, int(s.size))
-            dim   = sz * 4 + 2
-            tmp   = pygame.Surface((dim, dim), pygame.SRCALPHA)
+            sz = max(2, int(s.size))
+            dim = sz * 4 + 2
+            tmp = pygame.Surface((dim, dim), pygame.SRCALPHA)
             cx = cy = dim // 2
             rad = math.radians(s.angle)
             c, si = math.cos(rad), math.sin(rad)
@@ -395,11 +395,11 @@ class GameOverMenu(BaseScene):
 
     def _draw_typewriter(self, screen: pygame.Surface, sw: int, sh: int) -> None:
         visible = self._HEADER[:self._tw_revealed]
-        surf    = self.font_title.render(visible, True, _TITLE_CLR)
+        surf = self.font_title.render(visible, True, _TITLE_CLR)
 
         # Blinking cursor
         if int(self._phase_timer * 4) % 2 == 0:
-            cur  = self.font_title.render("_", True, _TITLE_CLR)
+            cur = self.font_title.render("_", True, _TITLE_CLR)
             comb = pygame.Surface(
                 (surf.get_width() + cur.get_width(), surf.get_height()),
                 pygame.SRCALPHA,
@@ -419,7 +419,7 @@ class GameOverMenu(BaseScene):
 
         # --- Title (pulses gold when new record) ---
         if self._is_new_record:
-            p   = 0.5 + 0.5 * math.sin(self._pulse_t * 5.0)
+            p = 0.5 + 0.5 * math.sin(self._pulse_t * 5.0)
             clr = (int(200 + 55 * p), int(140 + 70 * p), int(30 + 30 * p))
         else:
             clr = _TITLE_CLR
@@ -429,8 +429,8 @@ class GameOverMenu(BaseScene):
 
         # --- New Record badge ---
         if self._is_new_record:
-            bp    = 0.5 + 0.5 * math.sin(self._pulse_t * 6.0 + 1.0)
-            bclr  = (int(255 * bp), int(200 * bp), int(50 * bp))
+            bp = 0.5 + 0.5 * math.sin(self._pulse_t * 6.0 + 1.0)
+            bclr = (int(255 * bp), int(200 * bp), int(50 * bp))
             badge = self.font_record.render(
                 f"** NEW RECORD  --  RANK #{self._record_rank} **",
                 True, bclr,
@@ -438,18 +438,19 @@ class GameOverMenu(BaseScene):
             screen.blit(badge, (cx - badge.get_width() // 2, sh // 6 + 88))
 
         # --- Stats panel ---
-        mins  = int(self._time_alive // 60)
-        secs  = int(self._time_alive  % 60)
-        rows  = [
+        mins = int(self._time_alive // 60)
+        secs = int(self._time_alive % 60)
+        rows = [
             ("FINAL SCORE",       f"{self._score:,}"),
             ("TIME SURVIVED",     f"{mins:02d}:{secs:02d}"),
             ("ENEMIES SHATTERED", str(self._enemies)),
             ("UPGRADES ACQUIRED", str(self._boons)),
         ]
-        panel_top  = sh // 2 - 60
-        row_height  = 34
-        panel_left  = cx - 200  # left edge of key column
-        panel_right = cx + 200  # right edge of value column (values right-aligned here)
+        panel_top = sh // 2 - 60
+        row_height = 34
+        panel_left = cx - 200  # left edge of key column
+        # right edge of value column (values right-aligned here)
+        panel_right = cx + 200
 
         # Thin divider above stats
         pygame.draw.line(
@@ -458,7 +459,7 @@ class GameOverMenu(BaseScene):
             (panel_right, panel_top - 14), 1,
         )
         for i, (key, val) in enumerate(rows):
-            y      = panel_top + i * row_height
+            y = panel_top + i * row_height
             k_surf = self.font_stat.render(key, True, _STAT_KEY)
             v_surf = self.font_stat.render(val, True, _STAT_VAL)
             screen.blit(k_surf, (panel_left, y))
@@ -480,11 +481,11 @@ class GameOverMenu(BaseScene):
         for f in self._fountain:
             if f.lifetime <= 0:
                 continue
-            frac  = f.lifetime / f.max_lifetime
+            frac = f.lifetime / f.max_lifetime
             alpha = max(0, int(frac * 220))
-            sz    = max(1, int(f.size))
-            dim   = sz * 2 + 2
-            tmp   = pygame.Surface((dim, dim), pygame.SRCALPHA)
+            sz = max(1, int(f.size))
+            dim = sz * 2 + 2
+            tmp = pygame.Surface((dim, dim), pygame.SRCALPHA)
             pygame.draw.circle(tmp, (*f.color, alpha), (sz + 1, sz + 1), sz)
             screen.blit(tmp, (int(f.x) - sz, int(f.y) - sz))
 
@@ -500,7 +501,7 @@ class GameOverMenu(BaseScene):
         for _ in range(self._SHARD_COUNT):
             angle = random.uniform(0, 2 * math.pi)
             speed = random.uniform(70, 240)
-            lt    = random.uniform(1.2, self._SHATTER_DUR + 0.5)
+            lt = random.uniform(1.2, self._SHATTER_DUR + 0.5)
             shards.append(_Shard(
                 x=px, y=py,
                 vx=math.cos(angle) * speed,
@@ -531,11 +532,11 @@ class GameOverMenu(BaseScene):
         return ash
 
     def _make_fountain(self, sw: int, sh: int) -> List[_Fountain]:
-        colors  = [
+        colors = [
             (255, 210, 50), (0, 220, 255), (255, 255, 255), (255, 100, 200)
         ]
-        parts   = []
-        cx      = sw // 2
+        parts = []
+        cx = sw // 2
         for _ in range(60):
             lt = random.uniform(1.0, 2.6)
             parts.append(_Fountain(
@@ -561,8 +562,8 @@ class GameOverMenu(BaseScene):
 
         btn_w = 230
         btn_h = 46
-        gap   = 28
-        y     = sh - 120
+        gap = 28
+        y = sh - 120
 
         self._buttons = [
             _Button(
@@ -575,4 +576,3 @@ class GameOverMenu(BaseScene):
             ),
         ]
         self._layout_built = True
-
