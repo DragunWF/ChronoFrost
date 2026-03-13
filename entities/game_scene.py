@@ -179,6 +179,9 @@ class GameScene(BaseScene):
                         if not was_freezing and self.player.is_freezing:
                             self.vfx.trigger_shockwave(
                                 (self.player.x, self.player.y))
+                            audio_manager.play_time_stop()
+                        elif was_freezing and not self.player.is_freezing:
+                            audio_manager.play_time_resume()
 
             # Handle button events if paused
             if self.is_paused:

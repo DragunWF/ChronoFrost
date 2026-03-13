@@ -29,6 +29,9 @@ class AudioManager:
         self.sfx_shield_absorb = pygame.mixer.Sound(
             "assets/audio/shield_absorb.wav")
         self.sfx_shoot = pygame.mixer.Sound("assets/audio/shoot.wav")
+        self.sfx_time_stop = pygame.mixer.Sound("assets/audio/time_stop.wav")
+        self.sfx_time_resume = pygame.mixer.Sound(
+            "assets/audio/time_resume.wav")
 
         self.sfx_enemy_shatter_list: List[pygame.mixer.Sound] = [
             pygame.mixer.Sound("assets/audio/enemy_death_1.wav"),
@@ -37,6 +40,7 @@ class AudioManager:
         ]
 
         # --- SET INDIVIDUAL VOLUMES HERE (0.0 to 1.0) ---
+        self.sfx_time_stop.set_volume(1.5)
         self.sfx_player_hit.set_volume(0.95)
         self.sfx_shoot.set_volume(0.35)
         for sfx in self.sfx_enemy_shatter_list:
@@ -62,6 +66,12 @@ class AudioManager:
 
     def play_shoot(self) -> None:
         self.sfx_shoot.play()
+
+    def play_time_stop(self) -> None:
+        self.sfx_time_stop.play()
+
+    def play_time_resume(self) -> None:
+        self.sfx_time_resume.play()
 
     def play_enemy_shatter(self) -> None:
         random.choice(self.sfx_enemy_shatter_list).play()

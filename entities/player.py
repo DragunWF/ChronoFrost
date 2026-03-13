@@ -168,6 +168,7 @@ class Player:
             if self.freeze_meter <= 0.0:
                 self.freeze_meter = 0.0
                 self.is_freezing = False
+                audio_manager.play_time_resume()
         else:
             self.freeze_meter += self.freeze_recovery_rate * dt
             if self.freeze_meter > self.max_freeze_meter:
