@@ -11,7 +11,10 @@ from utils.base_scene import BaseScene
 from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
 from utils.vfx import TextPop, ScreenFlash, VFXManager
 from systems.run_stats import RunStats
+
+from utils.ui import Button
 from utils.audio_manager import audio_manager
+
 
 # Fixed score milestones that trigger the Boons menu.
 # After 8000 each subsequent threshold rises by +3000.
@@ -24,6 +27,7 @@ class GameScene(BaseScene):
         Initialize the core game containers here.
         """
         self.font: pygame.font.Font = pygame.font.SysFont(None, 36)
+        self.title_font: pygame.font.Font = pygame.font.SysFont(None, 72)
         self.small_font: pygame.font.Font = pygame.font.SysFont(None, 24)
         self.pop_font: pygame.font.Font = pygame.font.SysFont(None, 26)
         self.next_state: Optional[str] = None
@@ -34,6 +38,10 @@ class GameScene(BaseScene):
 
         self.vfx: VFXManager = VFXManager()
         self.render_surface: pygame.Surface = pygame.Surface((self.screen_width, self.screen_height))
+
+        # Pause State
+        self.is_paused: bool = False
+        self._setup_pause_menu()
 
         self.player: Player
         self.enemies: List[BaseEnemy] = []
@@ -66,6 +74,40 @@ class GameScene(BaseScene):
 
         # Index into _MILESTONES (or beyond) for the next upgrade trigger
         self.next_milestone_idx: int = 0
+
+    def _setup_pause_menu(self) -> None:
+        """Initialize buttons for the pause overlay."""
+        btn_w, btn_h = 240, 50
+        cx = self.screen_width // 2
+        cy = self.screen_height // 2
+        
+        self.pause_buttons = [
+            Button(
+                "RESUME",
+                pygame.Rect(cx - btn_w // 2, cy - 20, btn_w, btn_h),
+                self.font,
+                self.resume_game
+            ),
+            Button(
+                "QUIT TO MENU",
+                pygame.Rect(cx - btn_w // 2, cy + 50, btn_w, btn_h),
+                self.font,
+                self.quit_to_menu
+            )
+        ]
+
+    def toggle_pause(self) -> None:
+        """Switch between paused and running states."""
+        self.is_paused = not self.is_paused
+
+    def resume_game(self) -> None:
+        """Callback for the resume button."""
+        self.is_paused = False
+
+    def quit_to_menu(self) -> None:
+        """Callback for the quit button. Resets state and transitions."""
+        self.is_paused = False
+        self.next_state = MAIN_MENU_STATE
 
     def enter(self) -> None:
         """
@@ -117,25 +159,30 @@ class GameScene(BaseScene):
         """
         for event in events:
             if event.type == pygame.KEYDOWN:
-                # Shortcut to "die" and return to menu
+                # Toggle Pause Menu
                 if event.key == pygame.K_ESCAPE:
-                    self.next_state = MAIN_MENU_STATE
+                    self.toggle_pause()
 
-                # Toggle Chrono-Freeze
-                if event.key == pygame.K_SPACE:
+                # Toggle Chrono-Freeze (only if not paused)
+                if not self.is_paused and event.key == pygame.K_SPACE:
                     if getattr(self, 'player', None) and self.player.freeze_meter > 0:
                         was_freezing = self.player.is_freezing
                         self.player.is_freezing = not self.player.is_freezing
                         if not was_freezing and self.player.is_freezing:
                             self.vfx.trigger_shockwave((self.player.x, self.player.y))
 
-            # Left Mouse Button to shoot — gated by fire_timer cooldown
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if getattr(self, 'player', None) and self.fire_timer <= 0:
-                        for bullet in self._create_player_bullets():
-                            self.player_bullets.append(bullet)
-                        self.fire_timer = self._effective_fire_cooldown()
+            # Handle button events if paused
+            if self.is_paused:
+                for btn in self.pause_buttons:
+                    btn.handle_event(event)
+            else:
+                # Left Mouse Button to shoot — gated by fire_timer cooldown
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if getattr(self, 'player', None) and self.fire_timer <= 0:
+                            for bullet in self._create_player_bullets():
+                                self.player_bullets.append(bullet)
+                            self.fire_timer = self._effective_fire_cooldown()
 
     def update(self, dt: float) -> Optional[str]:
         """
@@ -143,6 +190,13 @@ class GameScene(BaseScene):
         """
         if self.next_state is not None:
             return self.next_state
+
+        if self.is_paused:
+            # Update button hover states even when paused
+            mouse_pos = pygame.mouse.get_pos()
+            for btn in self.pause_buttons:
+                btn.update(mouse_pos)
+            return None
 
         if not getattr(self, 'player', None):
             return None
@@ -484,6 +538,21 @@ class GameScene(BaseScene):
         # Screen flash overlay drawn last so it covers everything
         if self.screen_flash is not None:
             self.screen_flash.draw(self.render_surface)
+
+        # Draw Pause Overlay
+        if self.is_paused:
+            overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))  # Semi-transparent black
+            self.render_surface.blit(overlay, (0, 0))
+            
+            # Title
+            title_surf = self.title_font.render("PAUSED", True, (100, 220, 255))
+            title_rect = title_surf.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 100))
+            self.render_surface.blit(title_surf, title_rect)
+            
+            # Buttons
+            for btn in self.pause_buttons:
+                btn.draw(self.render_surface)
 
         screen.fill((0, 0, 0))
         screen.blit(self.render_surface, self.vfx.get_shake_offset())
