@@ -42,6 +42,40 @@ class Player:
         # Rising-edge detection for SHIFT so one press = one dash (not held)
         self._prev_shift: bool = False
 
+        # --- Sprite Asset Loading ---
+        # 8-directional wizard sprites
+        self.wizard_sprites = self._load_wizard_sprites()
+
+    def _load_wizard_sprites(self):
+        # Loads 8 directional sprites from assets/sprites
+        directions = [
+            ("N", "topwizard.png"),
+            ("NE", "toprightwizard.png"),
+            ("E", "rightwizard.png"),
+            ("SE", "rightdownwizard.png"),
+            ("S", "downwizard.png"),
+            ("SW", "downleftwizard.png"),
+            ("W", "leftwizard.png"),
+            ("NW", "topleftwizard.png")
+        ]
+        sprites = {}
+        for dir_key, filename in directions:
+            path = f"assets/sprites/{filename}"
+            sprites[dir_key] = pygame.image.load(path).convert_alpha()
+        return sprites
+
+    @staticmethod
+    def _angle_to_direction(angle: float) -> str:
+        # Map angle (degrees) to 8 directions
+        # 0 = E, 90 = N, 180 = W, -90 = S
+        dirs = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"]
+        # Angle: atan2(-dy, dx) (mouse relative to player)
+        # Convert to [0, 360)
+        a = angle % 360
+        # Each sector is 45 degrees
+        idx = int(((a + 22.5) % 360) // 45)
+        return dirs[idx]
+
     def take_damage(self, amount: int = 1) -> None:
         # I-frames: ignore all damage while timer is running
         if self.invincible_timer > 0:
@@ -138,22 +172,26 @@ class Player:
         self.aim_angle = get_angle(self.x, self.y, float(
             mouse_pos[0]), float(mouse_pos[1]))
 
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface, mouse_pos: Tuple[int, int]) -> None:
         # I-frame flicker: skip every other draw call while invincible from dashing
-        # (shield i-frames don't flicker — they feel more substantial)
         if self.invincible_timer > 0 and self.is_dashing:
             if int(self.invincible_timer * 12) % 2 == 0:
                 return
 
-        # Draw Player body (Circle)
-        pygame.draw.circle(screen, (0, 255, 100),
-                           (int(self.x), int(self.y)), self.radius)
+        # --- Sprite Rendering ---
+        # Compute direction based on mouse position
+        dx = mouse_pos[0] - self.x
+        dy = mouse_pos[1] - self.y
+        angle = math.degrees(math.atan2(-dy, dx))
+        direction = self._angle_to_direction(angle)
+        sprite = self.wizard_sprites.get(direction)
+        if sprite:
+            rect = sprite.get_rect(center=(self.x, self.y))
+            screen.blit(sprite, rect)
+        else:
+            # Fallback: draw circle if sprite missing
+            pygame.draw.circle(screen, (0, 255, 100), (int(self.x), int(self.y)), self.radius)
 
-        # Aiming Line
-        end_x = self.x + math.cos(self.aim_angle) * (self.radius + 15)
-        end_y = self.y + math.sin(self.aim_angle) * (self.radius + 15)
-        pygame.draw.line(screen, (255, 255, 255), (int(
-            self.x), int(self.y)), (int(end_x), int(end_y)), 3)
 
         # Freeze Meter UI near player
         bar_width = 40
@@ -162,26 +200,21 @@ class Player:
         bar_y = self.y - self.radius - 12
         fill_width = (self.freeze_meter / self.max_freeze_meter) * bar_width
 
-        pygame.draw.rect(screen, (80, 80, 80),
-                         (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(screen, (80, 80, 80), (bar_x, bar_y, bar_width, bar_height))
         color = (0, 255, 255) if self.is_freezing else (0, 150, 255)
         pygame.draw.rect(screen, color, (bar_x, bar_y, fill_width, bar_height))
 
         # --- HUD: ThermalShield indicator ---
         if self.shield_active:
-            # Pulsing cyan ring above the player
-            pygame.draw.circle(screen, (0, 220, 255),
-                               (int(self.x), int(self.y)), self.radius + 5, 2)
+            pygame.draw.circle(screen, (0, 220, 255), (int(self.x), int(self.y)), self.radius + 5, 2)
 
         # --- HUD: FlashStep charge counter ---
         if self.flash_step_charges > 0:
-            # Small yellow diamond icon below the player with a count number
             cx, cy = int(self.x), int(self.y) + self.radius + 10
             size = 5
             pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
             pygame.draw.polygon(screen, (255, 210, 50), pts)
             if self.flash_step_charges > 1:
-                # Draw count next to icon for multiple charges
                 font = pygame.font.SysFont(None, 20)
                 count_surf = font.render(str(self.flash_step_charges), True, (255, 210, 50))
                 screen.blit(count_surf, (cx + size + 2, cy - count_surf.get_height() // 2))

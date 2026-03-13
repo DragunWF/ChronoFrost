@@ -5,13 +5,12 @@ from typing import List, Optional
 
 from entities.player import Player
 from entities.enemies import TrackerCube, ShotgunCube, NovaCube, Bullet, BaseEnemy
-from entities.items import Powerup, SPAWN_CHANCE, POWERUP_TYPES, Ember
+from entities.items import Powerup, SPAWN_CHANCE, POWERUP_TYPES
 from utils.math_helpers import get_distance
 from utils.base_scene import BaseScene
 from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
 from utils.vfx import TextPop, ScreenFlash, VFXManager
 from systems.run_stats import RunStats
-from utils.director import DifficultyDirector
 
 # Fixed score milestones that trigger the Boons menu.
 # After 8000 each subsequent threshold rises by +3000.
@@ -35,19 +34,17 @@ class GameScene(BaseScene):
         self.vfx: VFXManager = VFXManager()
         self.render_surface: pygame.Surface = pygame.Surface((self.screen_width, self.screen_height))
 
-        self.director: DifficultyDirector = DifficultyDirector()
-
         self.player: Player
         self.enemies: List[BaseEnemy] = []
         self.player_bullets: List[Bullet] = []
         self.enemy_bullets: List[Bullet] = []
         self.powerups: List[Powerup] = []
-        self.embers: List[Ember] = []
         self.text_pops: List[TextPop] = []
         self.screen_flash: Optional[ScreenFlash] = None
 
         self.time_scale: float = 1.0
         self.spawn_timer: float = 0.0
+        self.base_spawn_rate: float = 1.5
 
         # Fire rate: base 200ms cooldown, gated per click
         self.base_fire_cooldown: float = 0.2
@@ -76,7 +73,6 @@ class GameScene(BaseScene):
         # Fresh run stats every new game
         self.run_stats = RunStats()
         self.next_milestone_idx = 0
-        self.director = DifficultyDirector()
 
         # Instantiate Player in the center of the screen, sharing RunStats
         self.player = Player(self.screen_width / 2, self.screen_height / 2, self.run_stats)
@@ -89,13 +85,13 @@ class GameScene(BaseScene):
         self.player_bullets = []
         self.enemy_bullets = []
         self.powerups = []
-        self.embers = []
         self.text_pops = []
         self.screen_flash = None
 
         # Core mechanics variables
         self.time_scale = 1.0
         self.spawn_timer = 0.0
+        self.base_spawn_rate = 1.5
         self.fire_timer = 0.0
 
         # Scoring reset
@@ -159,7 +155,6 @@ class GameScene(BaseScene):
             next_threshold = 8000 + 3000 * (self.next_milestone_idx - len(_MILESTONES) + 1)
         if int(self.score) >= next_threshold:
             self.next_milestone_idx += 1
-            self.director.increase_level()
             # Do not persist this transition in self.next_state; otherwise
             # resuming from Boons will immediately re-enter the menu.
             return BOONS_STATE
@@ -185,7 +180,7 @@ class GameScene(BaseScene):
         # 3. Enemy Spawning Logic (affected by time_scale)
         self.spawn_timer -= dt * self.time_scale
         if self.spawn_timer <= 0:
-            self.spawn_timer = self.director.get_spawn_cooldown(self.time_alive)
+            self.spawn_timer = self.base_spawn_rate
             self._spawn_enemy()
 
         # 4. Update Player Bullets
@@ -234,10 +229,6 @@ class GameScene(BaseScene):
                 self.enemies.remove(enemy)
                 self.score += 50
                 self.enemies_shattered += 1
-                
-                # Drop an Ember
-                self.embers.append(Ember(enemy.x, enemy.y))
-                
                 # Random chance to drop a Field Drop at the kill position
                 if random.random() < SPAWN_CHANCE:
                     self.powerups.append(
@@ -277,35 +268,10 @@ class GameScene(BaseScene):
         for pw in self.powerups[:]:
             pw.update(dt)
             dist = get_distance(pw.x, pw.y, self.player.x, self.player.y)
-            # Apply Ember Magnet to powerups too? The doc said "Increases the pickup radius for Thermal Embers and Powerups"
-            magnet_bonus = getattr(self.run_stats, 'ember_magnet_bonus', 0.0)
-            if dist < self.player.radius + pw.pickup_radius + magnet_bonus:
+            if dist < self.player.radius + pw.pickup_radius:
                 self._apply_powerup(pw)
                 self.vfx.spawn_pickup_ring(pw.x, pw.y, (255, 255, 255))
                 self.powerups.remove(pw)
-
-        # 7.5 Update and check Ember pickups
-        for ember in self.embers[:]:
-            ember.update(dt)
-            dist = get_distance(ember.x, ember.y, self.player.x, self.player.y)
-            magnet_bonus = getattr(self.run_stats, 'ember_magnet_bonus', 0.0)
-            if dist < self.player.radius + ember.pickup_radius + magnet_bonus:
-                base_energy = 15.0
-                # Apply Overclock / Ember Efficiency: +20% if active
-                # Looking at docs, this boon was "Ember Efficiency"
-                # If there's no explicit boolean flag, we'll just check if it exists or we just rely on director.
-                multiplier = self.director.get_ember_multiplier()
-                # Assuming there's some property like ember_efficiency_mult in run_stats, if so we could use it:
-                # efficiency_mult = getattr(self.run_stats, 'ember_efficiency_mult', 1.0)
-                # Let's keep it simple and follow the prompt.
-                
-                self.player.freeze_meter = min(
-                    self.player.freeze_meter + base_energy * multiplier,
-                    self.player.max_freeze_meter
-                )
-                self.embers.remove(ember)
-            elif ember.lifetime <= 0:
-                self.embers.remove(ember)
 
         # 8. Advance floating text labels (remove expired ones)
         self.text_pops = [tp for tp in self.text_pops if tp.update(dt)]
@@ -341,7 +307,7 @@ class GameScene(BaseScene):
 
         enemy_class = random.choices(
             [TrackerCube, ShotgunCube, NovaCube],
-            weights=self.director.get_spawn_weights(),
+            weights=[60, 30, 10],
             k=1
         )[0]
 
@@ -426,12 +392,9 @@ class GameScene(BaseScene):
         for pw in self.powerups:
             pw.draw(self.render_surface)
 
-        # Draw embers
-        for ember in self.embers:
-            ember.draw(self.render_surface)
-
         if getattr(self, 'player', None):
-            self.player.draw(self.render_surface)
+            mouse_pos = pygame.mouse.get_pos()
+            self.player.draw(self.render_surface, mouse_pos)
 
             # Draw UI - Top Middle Freeze Text
             freeze_text = "Press 'SPACE' to Freeze Time!"
