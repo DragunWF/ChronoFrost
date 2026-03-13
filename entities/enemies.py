@@ -8,6 +8,7 @@ from utils.audio_manager import audio_manager
 
 class Bullet:
     _sprite: pygame.Surface | None = None
+    _enemy_sprite: pygame.Surface | None = None
 
     def __init__(
         self,
@@ -28,19 +29,35 @@ class Bullet:
         # being destroyed as long as pierce_count > 0 (decrements on each hit).
         self.pierce_count: int = pierce_count
 
-        if Bullet._sprite is None:
-            raw_sprite = pygame.image.load("assets/sprites/energy_blast.png").convert_alpha()
-            # Scale the image down (e.g., to 50% size) so collision matches visuals
-            new_w = max(1, raw_sprite.get_width() // 2)
-            new_h = max(1, raw_sprite.get_height() // 2)
-            Bullet._sprite = pygame.transform.smoothscale(raw_sprite, (new_w, new_h))
-        
+        # Load appropriate sprite based on bullet type
+        if is_enemy:
+            if Bullet._enemy_sprite is None:
+                raw_sprite = pygame.image.load(
+                    "assets/sprites/enemy_blast.png").convert_alpha()
+                # Scale the image down (e.g., to 50% size) so collision matches visuals
+                new_w = max(1, raw_sprite.get_width() // 2)
+                new_h = max(1, raw_sprite.get_height() // 2)
+                Bullet._enemy_sprite = pygame.transform.smoothscale(
+                    raw_sprite, (new_w, new_h))
+            sprite_to_use = Bullet._enemy_sprite
+        else:
+            if Bullet._sprite is None:
+                raw_sprite = pygame.image.load(
+                    "assets/sprites/energy_blast.png").convert_alpha()
+                # Scale the image down (e.g., to 50% size) so collision matches visuals
+                new_w = max(1, raw_sprite.get_width() // 2)
+                new_h = max(1, raw_sprite.get_height() // 2)
+                Bullet._sprite = pygame.transform.smoothscale(
+                    raw_sprite, (new_w, new_h))
+            sprite_to_use = Bullet._sprite
+
         # Base the logical collision radius roughly on the scaled sprite's height
-        self.radius: int = max(3, Bullet._sprite.get_height() // 2)
+        self.radius: int = max(3, sprite_to_use.get_height() // 2)
 
         # Cache the rotated sprite since a bullet's angle doesn't change
         angle_deg = -math.degrees(self.angle)
-        self._rotated_sprite = pygame.transform.rotate(Bullet._sprite, angle_deg)
+        self._rotated_sprite = pygame.transform.rotate(
+            sprite_to_use, angle_deg)
 
     def update(self, dt: float, time_scale: float) -> None:
         # Multiply dt by the global time_scale
