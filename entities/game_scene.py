@@ -11,7 +11,10 @@ from utils.base_scene import BaseScene
 from utils.constants import BOONS_STATE, GAME_OVER_STATE, MAIN_MENU_STATE
 from utils.vfx import TextPop, ScreenFlash, VFXManager
 from systems.run_stats import RunStats
+
 from utils.ui import Button
+from utils.audio_manager import audio_manager
+
 
 # Fixed score milestones that trigger the Boons menu.
 # After 8000 each subsequent threshold rises by +3000.
@@ -113,7 +116,14 @@ class GameScene(BaseScene):
         """
         self.next_state = None
 
+        # Audio integration: Randomly select between the two available tracks
+        audio_manager.play_random_music([
+            "assets/audio/audio1.mp3",
+            "assets/audio/audio2.mp3"
+        ], loop=True)
+
         # Fresh run stats every new game
+
         self.run_stats = RunStats()
         self.next_milestone_idx = 0
 
