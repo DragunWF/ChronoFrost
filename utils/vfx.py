@@ -4,6 +4,8 @@ import math
 from typing import Tuple, List, Optional
 from dataclasses import dataclass
 
+from utils.font_manager import font_manager
+
 
 @dataclass
 class Particle:
@@ -124,7 +126,7 @@ class VFXManager:
         self.particles: List[Particle] = [Particle() for _ in range(200)]
         self.floating_texts: List[FloatingText] = [FloatingText() for _ in range(20)]
         
-        self.score_font = pygame.font.SysFont(None, 24)
+        self.score_font = font_manager.get_font(24)
 
     def _get_free_particle(self) -> Optional[Particle]:
         """Returns the first inactive particle in the pool."""

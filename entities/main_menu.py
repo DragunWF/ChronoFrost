@@ -10,6 +10,7 @@ from utils.audio_manager import audio_manager
 from utils.base_scene import BaseScene
 from utils.constants import PLAY_STATE, QUIT_STATE, LEADERBOARD_STATE
 from utils.vfx import ScreenFlash
+from utils.font_manager import font_manager
 
 # ---------------------------------------------------------------------------
 # Color palette — icy dark void aesthetic
@@ -174,10 +175,10 @@ class MainMenu(BaseScene):
     _PARTICLE_COUNT = 35
 
     def __init__(self) -> None:
-        self.font_title = pygame.font.SysFont(None, 96)
-        self.font_subtitle = pygame.font.SysFont(None, 26)
-        self.font_btn = pygame.font.SysFont(None, 36)
-        self.font_label = pygame.font.SysFont(None, 28)
+        self.font_title = font_manager.get_font(96)
+        self.font_subtitle = font_manager.get_font(26)
+        self.font_btn = font_manager.get_font(36)
+        self.font_label = font_manager.get_font(28)
 
         self.next_state: Optional[str] = None
         self._view: str = "main"

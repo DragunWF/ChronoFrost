@@ -4,6 +4,7 @@ from typing import Tuple, Optional
 from utils.math_helpers import get_angle
 from systems.run_stats import RunStats
 from utils.audio_manager import audio_manager
+from utils.font_manager import font_manager
 
 
 class Player:
@@ -222,7 +223,7 @@ class Player:
                    (cx, cy + size), (cx - size, cy)]
             pygame.draw.polygon(screen, (255, 210, 50), pts)
             if self.flash_step_charges > 1:
-                font = pygame.font.SysFont(None, 20)
+                font = font_manager.get_font(20)
                 count_surf = font.render(
                     str(self.flash_step_charges), True, (255, 210, 50))
                 screen.blit(count_surf, (cx + size + 2, cy -

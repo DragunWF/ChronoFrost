@@ -14,6 +14,7 @@ from systems.run_stats import RunStats
 
 from utils.ui import Button
 from utils.audio_manager import audio_manager
+from utils.font_manager import font_manager
 
 
 # Fixed score milestones that trigger the Boons menu.
@@ -26,10 +27,10 @@ class GameScene(BaseScene):
         """
         Initialize the core game containers here.
         """
-        self.font: pygame.font.Font = pygame.font.SysFont(None, 36)
-        self.title_font: pygame.font.Font = pygame.font.SysFont(None, 72)
-        self.small_font: pygame.font.Font = pygame.font.SysFont(None, 24)
-        self.pop_font: pygame.font.Font = pygame.font.SysFont(None, 26)
+        self.font: pygame.font.Font = font_manager.get_font(36)
+        self.title_font: pygame.font.Font = font_manager.get_font(72)
+        self.small_font: pygame.font.Font = font_manager.get_font(24)
+        self.pop_font: pygame.font.Font = font_manager.get_font(26)
         self.next_state: Optional[str] = None
 
         # Screen dimensions
@@ -65,7 +66,7 @@ class GameScene(BaseScene):
         self.time_alive: float = 0.0
         self.enemies_shattered: int = 0
         self.powerups_acquired: int = 0
-        self.ui_font: pygame.font.Font = pygame.font.SysFont(None, 36)
+        self.ui_font: pygame.font.Font = font_manager.get_font(36)
 
         # Load background image (ice map)
         self.background_image = pygame.image.load(
