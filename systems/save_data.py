@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Tuple
 # ---------------------------------------------------------------------------
 
 _SAVE_PATH = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "save_data.json")
+    os.path.join(os.path.dirname(__file__), "..", "data", "save_data.json")
 )
 
 _MAX_LEADERBOARD = 10
@@ -91,9 +91,10 @@ def record_run(
     data["leaderboard"] = board
 
     ls = data["lifetime_stats"]
-    ls["total_shattered"]   = ls.get("total_shattered",   0) + enemies_shattered
-    ls["total_time_played"] = ls.get("total_time_played", 0) + int(time_survived)
-    ls["runs_completed"]    = ls.get("runs_completed",    0) + 1
+    ls["total_shattered"] = ls.get("total_shattered",   0) + enemies_shattered
+    ls["total_time_played"] = ls.get(
+        "total_time_played", 0) + int(time_survived)
+    ls["runs_completed"] = ls.get("runs_completed",    0) + 1
 
     _write(data)
 

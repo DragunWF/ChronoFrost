@@ -37,7 +37,8 @@ class GameScene(BaseScene):
         self.screen_height: int = 600
 
         self.vfx: VFXManager = VFXManager()
-        self.render_surface: pygame.Surface = pygame.Surface((self.screen_width, self.screen_height))
+        self.render_surface: pygame.Surface = pygame.Surface(
+            (self.screen_width, self.screen_height))
 
         # Pause State
         self.is_paused: bool = False
@@ -67,7 +68,8 @@ class GameScene(BaseScene):
         self.ui_font: pygame.font.Font = pygame.font.SysFont(None, 36)
 
         # Load background image (ice map)
-        self.background_image = pygame.image.load("assets/background/ice-map.png").convert()
+        self.background_image = pygame.image.load(
+            "assets/background/ice-map.png").convert()
 
         # Upgrade state shared with Player and BoonsMenu
         self.run_stats: RunStats = RunStats()
@@ -80,7 +82,7 @@ class GameScene(BaseScene):
         btn_w, btn_h = 240, 50
         cx = self.screen_width // 2
         cy = self.screen_height // 2
-        
+
         self.pause_buttons = [
             Button(
                 "RESUME",
@@ -102,10 +104,12 @@ class GameScene(BaseScene):
 
     def resume_game(self) -> None:
         """Callback for the resume button."""
+        audio_manager.play_ui_select()
         self.is_paused = False
 
     def quit_to_menu(self) -> None:
         """Callback for the quit button. Resets state and transitions."""
+        audio_manager.play_ui_select()
         self.is_paused = False
         self.next_state = MAIN_MENU_STATE
 
@@ -118,8 +122,10 @@ class GameScene(BaseScene):
 
         # Audio integration: Randomly select between the two available tracks
         audio_manager.play_random_music([
-            "assets/audio/audio1.mp3",
-            "assets/audio/audio2.mp3"
+            "assets/audio/background_music_1.mp3",
+            "assets/audio/background_music_2.mp3",
+            "assets/audio/background_music_3.mp3",
+            "assets/audio/background_music_4.mp3"
         ], loop=True)
 
         # Fresh run stats every new game
@@ -128,7 +134,8 @@ class GameScene(BaseScene):
         self.next_milestone_idx = 0
 
         # Instantiate Player in the center of the screen, sharing RunStats
-        self.player = Player(self.screen_width / 2, self.screen_height / 2, self.run_stats)
+        self.player = Player(self.screen_width / 2,
+                             self.screen_height / 2, self.run_stats)
 
         # Reset VFX Manager
         self.vfx = VFXManager()
@@ -169,7 +176,8 @@ class GameScene(BaseScene):
                         was_freezing = self.player.is_freezing
                         self.player.is_freezing = not self.player.is_freezing
                         if not was_freezing and self.player.is_freezing:
-                            self.vfx.trigger_shockwave((self.player.x, self.player.y))
+                            self.vfx.trigger_shockwave(
+                                (self.player.x, self.player.y))
 
             # Handle button events if paused
             if self.is_paused:
@@ -182,6 +190,7 @@ class GameScene(BaseScene):
                         if getattr(self, 'player', None) and self.fire_timer <= 0:
                             for bullet in self._create_player_bullets():
                                 self.player_bullets.append(bullet)
+                            audio_manager.play_shoot()
                             self.fire_timer = self._effective_fire_cooldown()
 
     def update(self, dt: float) -> Optional[str]:
@@ -217,7 +226,8 @@ class GameScene(BaseScene):
             next_threshold = _MILESTONES[self.next_milestone_idx]
         else:
             # After the fixed list: +3000 per subsequent milestone
-            next_threshold = 8000 + 3000 * (self.next_milestone_idx - len(_MILESTONES) + 1)
+            next_threshold = 8000 + 3000 * \
+                (self.next_milestone_idx - len(_MILESTONES) + 1)
         if int(self.score) >= next_threshold:
             self.next_milestone_idx += 1
             # Do not persist this transition in self.next_state; otherwise
@@ -239,7 +249,8 @@ class GameScene(BaseScene):
             self.fire_timer = max(0.0, self.fire_timer - 1.0)
             self.player.kinetic_proc = False
             self.text_pops.append(
-                TextPop("KINETIC!", self.player.x, self.player.y - 40, (200, 200, 255))
+                TextPop("KINETIC!", self.player.x,
+                        self.player.y - 40, (200, 200, 255))
             )
 
         # 3. Enemy Spawning Logic (affected by time_scale)
@@ -274,8 +285,10 @@ class GameScene(BaseScene):
             if dist_to_player < bullet.radius + self.player.radius:
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
-                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
-                self.vfx.spawn_bullet_sparks(bullet.x, bullet.y, math.cos(bullet.angle), math.sin(bullet.angle))
+                self.vfx.spawn_player_leak(
+                    self.player.x, self.player.y, (0, 255, 255))
+                self.vfx.spawn_bullet_sparks(bullet.x, bullet.y, math.cos(
+                    bullet.angle), math.sin(bullet.angle))
                 self.enemy_bullets.remove(bullet)
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
@@ -307,7 +320,8 @@ class GameScene(BaseScene):
             if dist_to_player < self.player.radius + (enemy.size / 2) and not enemy.is_imploding:
                 self.player.take_damage(1)
                 self.vfx.add_shake(15.0)
-                self.vfx.spawn_player_leak(self.player.x, self.player.y, (0, 255, 255))
+                self.vfx.spawn_player_leak(
+                    self.player.x, self.player.y, (0, 255, 255))
                 enemy.hp = 0  # Trigger implosion
                 if self.player.hp <= 0:
                     self.next_state = GAME_OVER_STATE
@@ -319,7 +333,8 @@ class GameScene(BaseScene):
                     dist_to_bullet = get_distance(
                         p_bullet.x, p_bullet.y, enemy.x, enemy.y)
                     if dist_to_bullet < p_bullet.radius + (enemy.size / 2):
-                        self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(p_bullet.angle), math.sin(p_bullet.angle))
+                        self.vfx.spawn_bullet_sparks(p_bullet.x, p_bullet.y, math.cos(
+                            p_bullet.angle), math.sin(p_bullet.angle))
                         # Apply bullet damage to the enemy
                         enemy.hp -= p_bullet.damage
                         # PierceShot: consume one pierce charge rather than destroying bullet
@@ -345,7 +360,7 @@ class GameScene(BaseScene):
         if self.screen_flash is not None:
             if not self.screen_flash.update(dt):
                 self.screen_flash = None
-                
+
         self.vfx.update(dt, self.time_scale)
 
         return None
@@ -400,7 +415,8 @@ class GameScene(BaseScene):
             spread = math.radians(15)
             angles = [base_angle - spread, base_angle, base_angle + spread]
         return [
-            Bullet(px, py, a, is_enemy=False, damage=damage, pierce_count=pierce)
+            Bullet(px, py, a, is_enemy=False,
+                   damage=damage, pierce_count=pierce)
             for a in angles
         ]
 
@@ -414,27 +430,32 @@ class GameScene(BaseScene):
         px, py = self.player.x, self.player.y
         if pw.type == "ThermalShield":
             self.player.shield_active = True
-            self.text_pops.append(TextPop("SHIELD ACTIVE", px, py - 30, (0, 200, 255)))
+            self.text_pops.append(
+                TextPop("SHIELD ACTIVE", px, py - 30, (0, 200, 255)))
 
         elif pw.type == "FlashStep":
             self.player.flash_step_charges += 1
-            self.text_pops.append(TextPop("FLASH STEP!", px, py - 30, (255, 210, 50)))
+            self.text_pops.append(
+                TextPop("FLASH STEP!", px, py - 30, (255, 210, 50)))
 
         elif pw.type == "Supernova":
             # Clear every enemy bullet currently on screen
             self.enemy_bullets.clear()
             # Apply radial knockback: push all enemies away from the player
             for enemy in self.enemies:
-                ang = math.atan2(enemy.y - self.player.y, enemy.x - self.player.x)
+                ang = math.atan2(enemy.y - self.player.y,
+                                 enemy.x - self.player.x)
                 enemy.knockback_vel[0] = math.cos(ang) * 1200.0
                 enemy.knockback_vel[1] = math.sin(ang) * 1200.0
             self.screen_flash = ScreenFlash((255, 150, 50), 0.35)
-            self.text_pops.append(TextPop("SUPERNOVA!", px, py - 30, (255, 130, 30)))
+            self.text_pops.append(
+                TextPop("SUPERNOVA!", px, py - 30, (255, 130, 30)))
 
         elif pw.type == "ChronoSurge":
             # Fully restore the Chrono-Freeze meter
             self.player.freeze_meter = self.player.max_freeze_meter
-            self.text_pops.append(TextPop("SURGE!", px, py - 30, (100, 255, 200)))
+            self.text_pops.append(
+                TextPop("SURGE!", px, py - 30, (100, 255, 200)))
 
     def draw(self, screen: pygame.Surface) -> None:
         """
@@ -443,7 +464,8 @@ class GameScene(BaseScene):
         # Draw background image, scaled to fit if needed
         bg = self.background_image
         if bg.get_width() != self.screen_width or bg.get_height() != self.screen_height:
-            bg = pygame.transform.smoothscale(bg, (self.screen_width, self.screen_height))
+            bg = pygame.transform.smoothscale(
+                bg, (self.screen_width, self.screen_height))
         self.render_surface.blit(bg, (0, 0))
 
         # Draw game entities
@@ -533,7 +555,8 @@ class GameScene(BaseScene):
 
             self.vfx.draw_particles(self.render_surface)
 
-            self.vfx.draw_freeze_overlay(self.render_surface, self.player.is_freezing, (self.player.x, self.player.y))
+            self.vfx.draw_freeze_overlay(
+                self.render_surface, self.player.is_freezing, (self.player.x, self.player.y))
 
         # Screen flash overlay drawn last so it covers everything
         if self.screen_flash is not None:
@@ -541,15 +564,18 @@ class GameScene(BaseScene):
 
         # Draw Pause Overlay
         if self.is_paused:
-            overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+            overlay = pygame.Surface(
+                (self.screen_width, self.screen_height), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))  # Semi-transparent black
             self.render_surface.blit(overlay, (0, 0))
-            
+
             # Title
-            title_surf = self.title_font.render("PAUSED", True, (100, 220, 255))
-            title_rect = title_surf.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 100))
+            title_surf = self.title_font.render(
+                "PAUSED", True, (100, 220, 255))
+            title_rect = title_surf.get_rect(
+                center=(self.screen_width // 2, self.screen_height // 2 - 100))
             self.render_surface.blit(title_surf, title_rect)
-            
+
             # Buttons
             for btn in self.pause_buttons:
                 btn.draw(self.render_surface)

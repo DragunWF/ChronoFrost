@@ -8,6 +8,8 @@ from utils.constants import PLAY_STATE
 from systems.boons import BOON_POOL
 from systems.run_stats import RunStats
 
+from utils.audio_manager import audio_manager
+
 # ----- Card layout -------------------------------------------------------
 _CARD_W = 210
 _CARD_H = 270
@@ -55,7 +57,8 @@ class BoonsMenu(BaseScene):
         self.hovered_idx = None
         self.pending_select_idx = None
 
-        available = [b for b in BOON_POOL if b["name"] not in run_stats.selected_boons]
+        available = [b for b in BOON_POOL if b["name"]
+                     not in run_stats.selected_boons]
         count = min(3, len(available))
         self.cards = random.sample(available, count) if count > 0 else []
 
@@ -71,9 +74,11 @@ class BoonsMenu(BaseScene):
 
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_LEFT, pygame.K_a):
-                    self.selected_idx = (self.selected_idx - 1) % max(1, len(self.cards))
+                    self.selected_idx = (
+                        self.selected_idx - 1) % max(1, len(self.cards))
                 elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                    self.selected_idx = (self.selected_idx + 1) % max(1, len(self.cards))
+                    self.selected_idx = (
+                        self.selected_idx + 1) % max(1, len(self.cards))
                 elif event.key == pygame.K_RETURN:
                     self.pending_select_idx = self.selected_idx
                 elif event.key == pygame.K_1 and len(self.cards) >= 1:
@@ -94,6 +99,7 @@ class BoonsMenu(BaseScene):
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 for i, rect in enumerate(self._card_rects):
                     if rect.collidepoint(event.pos):
+                        audio_manager.play_ui_select()
                         self.pending_select_idx = i
                         break
 
@@ -108,6 +114,7 @@ class BoonsMenu(BaseScene):
             if self._confirm_button_rect.collidepoint(event.pos):
                 self._select(self.pending_select_idx)
             elif self._cancel_button_rect.collidepoint(event.pos):
+                audio_manager.play_ui_select()
                 self.pending_select_idx = None
 
     def _select(self, idx: int) -> None:
@@ -119,6 +126,7 @@ class BoonsMenu(BaseScene):
         self.run_stats.selected_boons.append(card["name"])
         self.pending_select_idx = None
         self.next_state = PLAY_STATE
+        audio_manager.play_boon_select()
 
     def update(self, dt: float) -> Optional[str]:
         return self.next_state
@@ -132,7 +140,8 @@ class BoonsMenu(BaseScene):
         screen.blit(overlay, (0, 0))
 
         # Title
-        title_surf = self.font_title.render("TEMPORAL AUGMENTS", True, (255, 215, 0))
+        title_surf = self.font_title.render(
+            "TEMPORAL AUGMENTS", True, (255, 215, 0))
         screen.blit(title_surf, (sw // 2 - title_surf.get_width() // 2, 60))
 
         sub_surf = self.font_hint.render(
@@ -147,10 +156,12 @@ class BoonsMenu(BaseScene):
         self._card_rects = []
         for i, card in enumerate(self.cards):
             rect = pygame.Rect(
-                row_left + i * (_CARD_W + _CARD_PAD), _CARD_TOP, _CARD_W, _CARD_H
+                row_left + i *
+                (_CARD_W + _CARD_PAD), _CARD_TOP, _CARD_W, _CARD_H
             )
             self._card_rects.append(rect)
-            self._draw_card(screen, rect, card, selected=(i == self.selected_idx))
+            self._draw_card(screen, rect, card,
+                            selected=(i == self.selected_idx))
 
         # Bottom keyboard hint
         hint = self.font_hint.render(
@@ -169,27 +180,39 @@ class BoonsMenu(BaseScene):
         card = self.cards[self.pending_select_idx]
 
         popup_w, popup_h = 420, 190
-        popup_rect = pygame.Rect(sw // 2 - popup_w // 2, sh // 2 - popup_h // 2, popup_w, popup_h)
+        popup_rect = pygame.Rect(
+            sw // 2 - popup_w // 2, sh // 2 - popup_h // 2, popup_w, popup_h)
 
         shade = pygame.Surface((sw, sh), pygame.SRCALPHA)
         shade.fill((0, 0, 0, 120))
         screen.blit(shade, (0, 0))
 
         pygame.draw.rect(screen, (18, 22, 32), popup_rect, border_radius=12)
-        pygame.draw.rect(screen, (230, 210, 110), popup_rect, 2, border_radius=12)
+        pygame.draw.rect(screen, (230, 210, 110),
+                         popup_rect, 2, border_radius=12)
 
-        title = self.font_popup.render("Confirm Temporal Augment", True, (255, 230, 150))
-        msg = self.font_desc.render(f"Apply {card['name']} for this run?", True, (220, 220, 235))
-        hint = self.font_hint.render("ENTER/Y = confirm   ESC/N = cancel", True, (150, 150, 175))
-        screen.blit(title, (popup_rect.centerx - title.get_width() // 2, popup_rect.y + 24))
-        screen.blit(msg, (popup_rect.centerx - msg.get_width() // 2, popup_rect.y + 74))
-        screen.blit(hint, (popup_rect.centerx - hint.get_width() // 2, popup_rect.y + 102))
+        title = self.font_popup.render(
+            "Confirm Temporal Augment", True, (255, 230, 150))
+        msg = self.font_desc.render(
+            f"Apply {card['name']} for this run?", True, (220, 220, 235))
+        hint = self.font_hint.render(
+            "ENTER/Y = confirm   ESC/N = cancel", True, (150, 150, 175))
+        screen.blit(title, (popup_rect.centerx -
+                    title.get_width() // 2, popup_rect.y + 24))
+        screen.blit(msg, (popup_rect.centerx -
+                    msg.get_width() // 2, popup_rect.y + 74))
+        screen.blit(hint, (popup_rect.centerx -
+                    hint.get_width() // 2, popup_rect.y + 102))
 
-        self._confirm_button_rect = pygame.Rect(popup_rect.centerx - 150, popup_rect.bottom - 56, 130, 36)
-        self._cancel_button_rect = pygame.Rect(popup_rect.centerx + 20, popup_rect.bottom - 56, 130, 36)
+        self._confirm_button_rect = pygame.Rect(
+            popup_rect.centerx - 150, popup_rect.bottom - 56, 130, 36)
+        self._cancel_button_rect = pygame.Rect(
+            popup_rect.centerx + 20, popup_rect.bottom - 56, 130, 36)
 
-        pygame.draw.rect(screen, (40, 120, 70), self._confirm_button_rect, border_radius=8)
-        pygame.draw.rect(screen, (110, 50, 60), self._cancel_button_rect, border_radius=8)
+        pygame.draw.rect(screen, (40, 120, 70),
+                         self._confirm_button_rect, border_radius=8)
+        pygame.draw.rect(screen, (110, 50, 60),
+                         self._cancel_button_rect, border_radius=8)
 
         ok_text = self.font_hint.render("CONFIRM", True, (240, 255, 240))
         no_text = self.font_hint.render("CANCEL", True, (255, 235, 235))
@@ -254,7 +277,8 @@ class BoonsMenu(BaseScene):
         # Description (newline-split)
         for j, line in enumerate(card["description"].split("\n")):
             d_surf = self.font_desc.render(line, True, (160, 160, 180))
-            screen.blit(d_surf, (cx - d_surf.get_width() // 2, icon_y + 96 + j * 22))
+            screen.blit(d_surf, (cx - d_surf.get_width() //
+                        2, icon_y + 96 + j * 22))
 
         # Keyboard shortcut badge
         key_num = self.cards.index(card) + 1
@@ -271,15 +295,18 @@ class BoonsMenu(BaseScene):
         if name == "PierceShot":
             # Horizontal arrow (bullet passing through)
             for offset in (-6, 0, 6):
-                pygame.draw.line(screen, color, (cx - r, cy + offset), (cx + r - 8, cy + offset), 2)
-            pts = [(cx + r - 8, cy - 10), (cx + r + 4, cy), (cx + r - 8, cy + 10)]
+                pygame.draw.line(screen, color, (cx - r, cy +
+                                 offset), (cx + r - 8, cy + offset), 2)
+            pts = [(cx + r - 8, cy - 10), (cx + r + 4, cy),
+                   (cx + r - 8, cy + 10)]
             pygame.draw.polygon(screen, color, pts)
 
         elif name == "RapidFire":
             # Three vertical bars of increasing height
             for i, h in enumerate([14, 20, 26]):
                 bx = cx - 14 + i * 14
-                pygame.draw.rect(screen, color, (bx - 4, cy - h // 2, 8, h), border_radius=3)
+                pygame.draw.rect(screen, color, (bx - 4, cy -
+                                 h // 2, 8, h), border_radius=3)
 
         elif name == "SpreadShot":
             # Fan of 3 lines diverging upward
@@ -287,12 +314,14 @@ class BoonsMenu(BaseScene):
                 ang = math.radians(angle_deg - 90)
                 ex = cx + math.cos(ang) * r
                 ey = cy + math.sin(ang) * r
-                pygame.draw.line(screen, color, (cx, cy + 10), (int(ex), int(ey)), 2)
+                pygame.draw.line(screen, color, (cx, cy + 10),
+                                 (int(ex), int(ey)), 2)
 
         elif name == "HeavyCaliber":
             # Thick bullet silhouette
             pygame.draw.circle(screen, color, (cx, cy - 8), 9)
-            pygame.draw.rect(screen, color, (cx - 9, cy - 8, 18, 20), border_radius=2)
+            pygame.draw.rect(screen, color, (cx - 9, cy -
+                             8, 18, 20), border_radius=2)
 
         elif name == "DeepFreeze":
             # Snowflake: 6 spokes with tip dots
@@ -300,7 +329,8 @@ class BoonsMenu(BaseScene):
                 ang = math.radians(i * 60)
                 ex = cx + math.cos(ang) * r
                 ey = cy + math.sin(ang) * r
-                pygame.draw.line(screen, color, (cx, cy), (int(ex), int(ey)), 2)
+                pygame.draw.line(screen, color, (cx, cy),
+                                 (int(ex), int(ey)), 2)
                 pygame.draw.circle(screen, color, (int(ex), int(ey)), 3)
 
         elif name == "EmberMagnet":
@@ -329,8 +359,8 @@ class BoonsMenu(BaseScene):
             pygame.draw.line(screen, color, (cx, cy), (cx, cy - r + 4), 2)
             pygame.draw.line(screen, color, (cx, cy), (cx + r - 6, cy - 8), 2)
             # Small forward chevron
-            pygame.draw.line(screen, color, (cx + r - 6, cy - 8), (cx + r - 2, cy - 2), 2)
+            pygame.draw.line(screen, color, (cx + r - 6, cy - 8),
+                             (cx + r - 2, cy - 2), 2)
 
         else:
             pygame.draw.circle(screen, color, (cx, cy), r, 2)
-

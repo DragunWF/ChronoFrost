@@ -3,6 +3,7 @@ import math
 from typing import Tuple, Optional
 from utils.math_helpers import get_angle
 from systems.run_stats import RunStats
+from utils.audio_manager import audio_manager
 
 
 class Player:
@@ -84,6 +85,7 @@ class Player:
         if self.shield_active:
             self.shield_active = False
             self.invincible_timer = 1.5
+            audio_manager.play_shield_absorb()
             return
         # KineticPlating: count the hit; every 5th hit signals a cooldown cut
         if self.run_stats.kinetic_plating_stacks > 0:
@@ -91,6 +93,8 @@ class Player:
             if self.run_stats.kinetic_hits_since_proc >= 5:
                 self.run_stats.kinetic_hits_since_proc = 0
                 self.kinetic_proc = True
+
+        audio_manager.play_player_hit()
         self.hp = max(0, self.hp - amount)
 
     def update(self, dt: float, keys: pygame.key.ScancodeWrapper, mouse_pos: Tuple[int, int]) -> None:
@@ -190,8 +194,8 @@ class Player:
             screen.blit(sprite, rect)
         else:
             # Fallback: draw circle if sprite missing
-            pygame.draw.circle(screen, (0, 255, 100), (int(self.x), int(self.y)), self.radius)
-
+            pygame.draw.circle(screen, (0, 255, 100),
+                               (int(self.x), int(self.y)), self.radius)
 
         # Freeze Meter UI near player
         bar_width = 40
@@ -200,21 +204,26 @@ class Player:
         bar_y = self.y - self.radius - 12
         fill_width = (self.freeze_meter / self.max_freeze_meter) * bar_width
 
-        pygame.draw.rect(screen, (80, 80, 80), (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(screen, (80, 80, 80),
+                         (bar_x, bar_y, bar_width, bar_height))
         color = (0, 255, 255) if self.is_freezing else (0, 150, 255)
         pygame.draw.rect(screen, color, (bar_x, bar_y, fill_width, bar_height))
 
         # --- HUD: ThermalShield indicator ---
         if self.shield_active:
-            pygame.draw.circle(screen, (0, 220, 255), (int(self.x), int(self.y)), self.radius + 5, 2)
+            pygame.draw.circle(screen, (0, 220, 255), (int(
+                self.x), int(self.y)), self.radius + 5, 2)
 
         # --- HUD: FlashStep charge counter ---
         if self.flash_step_charges > 0:
             cx, cy = int(self.x), int(self.y) + self.radius + 10
             size = 5
-            pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
+            pts = [(cx, cy - size), (cx + size, cy),
+                   (cx, cy + size), (cx - size, cy)]
             pygame.draw.polygon(screen, (255, 210, 50), pts)
             if self.flash_step_charges > 1:
                 font = pygame.font.SysFont(None, 20)
-                count_surf = font.render(str(self.flash_step_charges), True, (255, 210, 50))
-                screen.blit(count_surf, (cx + size + 2, cy - count_surf.get_height() // 2))
+                count_surf = font.render(
+                    str(self.flash_step_charges), True, (255, 210, 50))
+                screen.blit(count_surf, (cx + size + 2, cy -
+                            count_surf.get_height() // 2))
