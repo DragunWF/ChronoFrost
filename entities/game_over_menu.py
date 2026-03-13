@@ -127,7 +127,7 @@ class GameOverMenu(BaseScene):
         self.font_title = font_manager.get_font(92)
         self.font_sub = font_manager.get_font(34)
         self.font_stat = font_manager.get_font(30)
-        self.font_btn = font_manager.get_font(34)
+        self.font_btn = font_manager.get_font(32)
         self.font_record = font_manager.get_font(42)
 
         self.next_state: Optional[str] = None
