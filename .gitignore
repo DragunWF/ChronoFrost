@@ -1,6 +1,9 @@
 # DragunWF
 dragunwf-secret
 
+# macOS
+.DS_Store
+
 # Python/Build
 __pycache__/
 *.py[cod]
