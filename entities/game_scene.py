@@ -17,11 +17,6 @@ from utils.audio_manager import audio_manager
 from utils.font_manager import font_manager
 
 
-# Fixed score milestones that trigger the Boons menu.
-# After 8000 each subsequent threshold rises by +3000.
-_MILESTONES = [1000, 2500, 5000, 8000]
-
-
 class GameScene(BaseScene):
     def __init__(self) -> None:
         """
@@ -75,8 +70,19 @@ class GameScene(BaseScene):
         # Upgrade state shared with Player and BoonsMenu
         self.run_stats: RunStats = RunStats()
 
-        # Index into _MILESTONES (or beyond) for the next upgrade trigger
+        # Index into milestones (or beyond) for the next upgrade trigger
         self.next_milestone_idx: int = 0
+
+    def _get_milestone_threshold(self, idx: int) -> int:
+        """
+        Calculate the score threshold for the idx-th milestone.
+        Base of 1000, increment increases by 250 each time.
+        idx 0: 1000
+        idx 1: 2250 (1000 + 1250)
+        idx 2: 3750 (2250 + 1500)
+        idx 3: 5500 (3750 + 1750)
+        """
+        return 1000 * (idx + 1) + 250 * idx * (idx + 1) // 2
 
     def _setup_pause_menu(self) -> None:
         """Initialize buttons for the pause overlay."""
@@ -229,12 +235,7 @@ class GameScene(BaseScene):
         self.score += 1 * dt
 
         # --- Milestone check: trigger Boons menu at score thresholds ---
-        if self.next_milestone_idx < len(_MILESTONES):
-            next_threshold = _MILESTONES[self.next_milestone_idx]
-        else:
-            # After the fixed list: +3000 per subsequent milestone
-            next_threshold = 8000 + 3000 * \
-                (self.next_milestone_idx - len(_MILESTONES) + 1)
+        next_threshold = self._get_milestone_threshold(self.next_milestone_idx)
         if int(self.score) >= next_threshold:
             self.next_milestone_idx += 1
             # Do not persist this transition in self.next_state; otherwise
