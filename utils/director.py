@@ -2,7 +2,7 @@ class DifficultyDirector:
     def __init__(self) -> None:
         self.level: int = 1
         # The base cooldown for level 1 (after the initial grace period)
-        self.base_spawn_cooldown: float = 1.55
+        self.base_spawn_cooldown: float = 1
         # The lowest the spawn cooldown can go (caps the max spawn rate)
         self.min_spawn_cooldown: float = 0.2
         self.current_spawn_cooldown: float = self.base_spawn_cooldown
