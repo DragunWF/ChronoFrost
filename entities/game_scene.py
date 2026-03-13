@@ -57,6 +57,9 @@ class GameScene(BaseScene):
         self.powerups_acquired: int = 0
         self.ui_font: pygame.font.Font = pygame.font.SysFont(None, 36)
 
+        # Load background image (ice map)
+        self.background_image = pygame.image.load("assets/background/ice-map.png").convert()
+
         # Upgrade state shared with Player and BoonsMenu
         self.run_stats: RunStats = RunStats()
 
@@ -375,8 +378,11 @@ class GameScene(BaseScene):
         """
         Renders the game world.
         """
-        # Draw background
-        self.render_surface.fill((20, 30, 40))
+        # Draw background image, scaled to fit if needed
+        bg = self.background_image
+        if bg.get_width() != self.screen_width or bg.get_height() != self.screen_height:
+            bg = pygame.transform.smoothscale(bg, (self.screen_width, self.screen_height))
+        self.render_surface.blit(bg, (0, 0))
 
         # Draw game entities
         for enemy in self.enemies:
