@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pygame-ce = "2.5.7"
+pygbag = "*"
 
 [dev-packages]
 
