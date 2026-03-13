@@ -510,7 +510,7 @@ class GameScene(BaseScene):
             if self.player.is_freezing:
                 freeze_text += " Time Freeze: [ACTIVE]"
             freeze_surface = self.font.render(
-                freeze_text, True, (255, 255, 255))
+                freeze_text, True, (0, 0, 128))
             freeze_rect = freeze_surface.get_rect(
                 center=(self.screen_width / 2, 50))  # Below score text
             self.render_surface.blit(freeze_surface, freeze_rect)
@@ -536,7 +536,7 @@ class GameScene(BaseScene):
 
             # Text label above the meter
             label_text = self.small_font.render(
-                "CHRONO-CHARGE", True, (255, 255, 255))
+                "CHRONO-CHARGE", True, (0, 0, 128))
             self.render_surface.blit(label_text, (meter_x, meter_y - 25))
 
             # Draw UI - Bottom Right Health Bar
@@ -558,12 +558,12 @@ class GameScene(BaseScene):
 
             # Text label above the health bar
             hp_label = self.small_font.render(
-                "HULL INTEGRITY", True, (255, 255, 255))
+                "HULL INTEGRITY", True, (0, 0, 128))
             self.render_surface.blit(hp_label, (hp_meter_x, hp_meter_y - 25))
 
             # Draw UI - Score
-            score_text = self.ui_font.render(
-                f"SCORE: {int(self.score)}", True, (255, 255, 255))
+            score_text = self.font.render(
+                f"SCORE: {int(self.score)}", True, (0, 0, 128))
             score_rect = score_text.get_rect(
                 center=(self.screen_width / 2, 20))
             self.render_surface.blit(score_text, score_rect)
