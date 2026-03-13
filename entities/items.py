@@ -83,3 +83,30 @@ class Powerup:
             # Concentric rings (freeze symbol)
             pygame.draw.circle(screen, c, (cx, cy), 5)
             pygame.draw.circle(screen, c, (cx, cy), 8, 1)
+
+
+class Ember:
+    def __init__(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+        self.radius = 4
+        self.pickup_radius = 15
+        self.color = (255, 150, 50)
+        self.velocity = [random.uniform(-50, 50), random.uniform(-50, 50)]
+        self.lifetime = 10.0
+
+    def update(self, dt: float) -> None:
+        self.x += self.velocity[0] * dt
+        self.y += self.velocity[1] * dt
+        # Friction
+        self.velocity[0] *= (1.0 - 2.0 * dt)
+        self.velocity[1] *= (1.0 - 2.0 * dt)
+        self.lifetime -= dt
+
+    def draw(self, screen: pygame.Surface) -> None:
+        alpha = int(255 * min(1.0, self.lifetime))
+        if alpha <= 0:
+            return
+
+        cx, cy = int(self.x), int(self.y)
+        pygame.draw.circle(screen, self.color, (cx, cy), self.radius)
