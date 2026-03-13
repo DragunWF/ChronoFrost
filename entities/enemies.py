@@ -7,6 +7,8 @@ from utils.audio_manager import audio_manager
 
 
 class Bullet:
+    _sprite: pygame.Surface | None = None
+
     def __init__(
         self,
         x: float,
@@ -18,7 +20,6 @@ class Bullet:
     ) -> None:
         self.x: float = x
         self.y: float = y
-        self.radius: int = 6
         self.speed: int = 500
         self.angle: float = angle
         self.is_enemy: bool = is_enemy
@@ -26,6 +27,20 @@ class Bullet:
         # Pierce charges remaining; bullet passes through an enemy instead of
         # being destroyed as long as pierce_count > 0 (decrements on each hit).
         self.pierce_count: int = pierce_count
+
+        if Bullet._sprite is None:
+            raw_sprite = pygame.image.load("assets/sprites/energy_blast.png").convert_alpha()
+            # Scale the image down (e.g., to 50% size) so collision matches visuals
+            new_w = max(1, raw_sprite.get_width() // 2)
+            new_h = max(1, raw_sprite.get_height() // 2)
+            Bullet._sprite = pygame.transform.smoothscale(raw_sprite, (new_w, new_h))
+        
+        # Base the logical collision radius roughly on the scaled sprite's height
+        self.radius: int = max(3, Bullet._sprite.get_height() // 2)
+
+        # Cache the rotated sprite since a bullet's angle doesn't change
+        angle_deg = -math.degrees(self.angle)
+        self._rotated_sprite = pygame.transform.rotate(Bullet._sprite, angle_deg)
 
     def update(self, dt: float, time_scale: float) -> None:
         # Multiply dt by the global time_scale
@@ -35,9 +50,8 @@ class Bullet:
         self.y += math.sin(self.angle) * self.speed * effective_dt
 
     def draw(self, screen: pygame.Surface) -> None:
-        color = (255, 50, 50) if self.is_enemy else (255, 255, 0)
-        pygame.draw.circle(screen, color,
-                           (int(self.x), int(self.y)), self.radius)
+        rect = self._rotated_sprite.get_rect(center=(int(self.x), int(self.y)))
+        screen.blit(self._rotated_sprite, rect)
 
 
 class BaseEnemy:
