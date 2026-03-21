@@ -37,7 +37,7 @@ This project uses `pipenv` for dependency management to ensure a clean, isolated
 1. **Clone the repository:**
 
    ```bash
-   git clone [https://github.com/yourusername/ChronoFrost.git](https://github.com/yourusername/ChronoFrost.git)
+   git clone https://github.com/DragunWF/ChronoFrost
    cd ChronoFrost
    ```
 
