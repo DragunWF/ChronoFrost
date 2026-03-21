@@ -11,7 +11,13 @@ A 2D top-down roguelite survival/bullet-hell game built entirely in Pygame. Rely
 
 ## 📸 Screenshots
 
-> _(Add your screenshots here!)_
+![Game Cover](/assets/publish/game_cover.png)
+![Main Menu](/assets/publish/gameover.png)
+![Milestones](/assets/publish/milestones.png)
+![Records Menu](/assets/publish/records_menu.png)
+![Game Over](/assets/publish/gameover.png)
+![Gameplay 1](/assets/publish/gameplay_1.png)
+![Gameplay 2](/assets/publish/gameplay_2.png)
 
 ## 📖 Documentation
 
