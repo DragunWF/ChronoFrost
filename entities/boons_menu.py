@@ -46,6 +46,8 @@ class BoonsMenu(BaseScene):
         self._card_rects: List[pygame.Rect] = []
         self._confirm_button_rect: pygame.Rect = pygame.Rect(0, 0, 0, 0)
         self._cancel_button_rect: pygame.Rect = pygame.Rect(0, 0, 0, 0)
+        # Hit-test rect for the fallback "Continue" button (empty pool state)
+        self._continue_button_rect: pygame.Rect = pygame.Rect(0, 0, 0, 0)
 
     def open_with_stats(self, run_stats: RunStats) -> None:
         """
@@ -68,6 +70,25 @@ class BoonsMenu(BaseScene):
         pass
 
     def handle_events(self, events: List[pygame.event.Event]) -> None:
+        # ------------------------------------------------------------------ #
+        # Fallback: boon pool fully exhausted — no cards to display or pick.  #
+        # Allow SPACE, ENTER, or a click on the Continue button to exit.      #
+        # ------------------------------------------------------------------ #
+        if not self.cards:
+            for event in events:
+                if event.type == pygame.KEYDOWN and event.key in (
+                    pygame.K_SPACE,
+                    pygame.K_RETURN,
+                ):
+                    self.next_state = PLAY_STATE
+                elif (
+                    event.type == pygame.MOUSEBUTTONDOWN
+                    and event.button == 1
+                    and self._continue_button_rect.collidepoint(event.pos)
+                ):
+                    self.next_state = PLAY_STATE
+            return
+
         for event in events:
             if self.pending_select_idx is not None:
                 self._handle_confirmation_events(event)
@@ -140,6 +161,13 @@ class BoonsMenu(BaseScene):
         overlay.fill((0, 0, 20, 185))
         screen.blit(overlay, (0, 0))
 
+        # --------------------------------------------------------------------- #
+        # Fallback: boon pool fully exhausted — render alternate UI and return.  #
+        # --------------------------------------------------------------------- #
+        if not self.cards:
+            self._draw_empty_pool_ui(screen)
+            return
+
         # Title
         title_surf = self.font_title.render(
             "TEMPORAL AUGMENTS", True, (255, 215, 0))
@@ -174,6 +202,67 @@ class BoonsMenu(BaseScene):
 
         if self.pending_select_idx is not None and self.pending_select_idx < len(self.cards):
             self._draw_confirmation_popup(screen)
+
+    def _draw_empty_pool_ui(self, screen: pygame.Surface) -> None:
+        """
+        Rendered in place of the card row when every boon in the pool has
+        already been selected.  Displays a maximum-power notice and a
+        clickable Continue button that returns to the PLAYING state.
+        """
+        sw, sh = screen.get_size()
+        cy_mid: int = sh // 2
+
+        # --- Heading ---
+        heading_surf: pygame.Surface = self.font_title.render(
+            "MAXIMUM POWER REACHED", True, (255, 215, 0)
+        )
+        screen.blit(
+            heading_surf,
+            (sw // 2 - heading_surf.get_width() // 2, cy_mid - 90),
+        )
+
+        # --- Sub-text ---
+        sub_surf: pygame.Surface = self.font_hint.render(
+            "All Temporal Augments have been integrated.",
+            True,
+            (180, 180, 200),
+        )
+        screen.blit(
+            sub_surf,
+            (sw // 2 - sub_surf.get_width() // 2, cy_mid - 30),
+        )
+
+        # --- Continue button ---
+        btn_w: int = 260
+        btn_h: int = 48
+        self._continue_button_rect = pygame.Rect(
+            sw // 2 - btn_w // 2, cy_mid + 30, btn_w, btn_h
+        )
+        pygame.draw.rect(
+            screen, (40, 110, 70), self._continue_button_rect, border_radius=10
+        )
+        pygame.draw.rect(
+            screen, (120, 220, 160), self._continue_button_rect, 2, border_radius=10
+        )
+        btn_label: pygame.Surface = self.font_name.render(
+            "CONTINUE", True, (230, 255, 230)
+        )
+        screen.blit(
+            btn_label,
+            (
+                self._continue_button_rect.centerx - btn_label.get_width() // 2,
+                self._continue_button_rect.centery - btn_label.get_height() // 2,
+            ),
+        )
+
+        # --- Bottom key hint ---
+        hint_surf: pygame.Surface = self.font_hint.render(
+            "SPACE / ENTER / Click to continue", True, (120, 120, 140)
+        )
+        screen.blit(
+            hint_surf,
+            (sw // 2 - hint_surf.get_width() // 2, sh - 36),
+        )
 
     def _draw_confirmation_popup(self, screen: pygame.Surface) -> None:
         """Draw a modal-like confirmation prompt before applying the selected boon."""
